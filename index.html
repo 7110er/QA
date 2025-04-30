@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -147,7 +108,7 @@
 
   <script>
     // 設定後端與試算表相關的變數（需替換為您自己的值）
-    const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0'; // 疾病全人照護QA試算表ID
+      const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0'; // 疾病全人照護QA試算表ID
     const RECORD_SPREADSHEET_ID = '1R1fc1Hg7aWlacWQYyPGNlOploKdg4dY_K7eXjvLyEeE'; // 疾病全人照護紀錄試算表ID
     const SIGNATURE_FOLDER_ID = '1llJYscx3uh2uB1E72Exhd0ZbGTIdsXQd'; // Google Drive簽名資料夾ID
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyedh1BBCzRKURfDsFnopiTQlPn81lWVkp5bVAXXh2sBAT8VCkAKQMSNzKMrDjIszxhMg/exec'; // Google Apps Script 網路應用程式 URL
@@ -159,11 +120,32 @@
       messageDiv.classList.add('text-red-500');
     }
 
-    // 載入疾病照護類型（從試算表分頁名稱取得）
-    window.addEventListener('load', async () => {
+    // 檢查後端連線（在頁面載入時執行）
+    async function checkBackendConnection() {
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`);
-        if (!response.ok) throw new Error('無法連接到後端服務，請檢查 GOOGLE_SCRIPT_URL');
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        if (!response.ok) throw new Error('無法連接到後端服務，請檢查 GOOGLE_SCRIPT_URL 是否正確或後端是否已部署');
+      } catch (error) {
+        showError(`後端連線失敗：${error.message}`);
+        console.error('後端連線失敗：', error);
+      }
+    }
+
+    // 頁面載入時執行
+    window.addEventListener('load', async () => {
+      // 檢查後端連線
+      await checkBackendConnection();
+
+      // 載入疾病照護類型（從試算表分頁名稱取得）
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        if (!response.ok) throw new Error('無法載入疾病照護類型，請檢查 GOOGLE_SCRIPT_URL 或試算表存取權限');
         const diseaseTypes = await response.json();
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
@@ -195,12 +177,15 @@
 
     // 載入問題分類（從試算表欄 A 取得）
     async function loadCategories() {
-      const issueType = document.getElementById('issueType').value;
+      const issueType = document.getElementを紹介Type').value;
       if (!issueType) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`);
-        if (!response.ok) throw new Error('無法載入問題分類');
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        if (!response.ok) throw new Error('無法載入問題分類，請檢查後端連線');
         const categories = await response.json();
         const categorySelect = document.getElementById('category');
         categorySelect.innerHTML = '<option value="">請選擇</option>';
@@ -226,8 +211,11 @@
       if (!issueType || !category) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`);
-        if (!response.ok) throw new Error('無法載入問題內容');
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        if (!response.ok) throw new Error('無法載入問題內容，請檢查後端連線');
         const questions = await response.json();
         const userInputSelect = document.getElementById('userInput');
         userInputSelect.innerHTML = '<option value="">請選擇問題</option>';
@@ -254,8 +242,11 @@
       if (!question) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`);
-        if (!response.ok) throw new Error('無法載入醫療人員回應');
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        if (!response.ok) throw new Error('無法載入醫療人員回應，請檢查後端連線');
         const result = await response.json();
         document.getElementById('staffResponse').value = result.response || '';
       } catch (error) {
@@ -337,7 +328,7 @@
       if (signatureFile) {
         const reader = new FileReader();
         reader.onload = async () => {
-          const signatureData = reader.result;
+          const簽名Data = reader.result;
           try {
             const signatureUrl = await uploadSignature(signatureData);
             formData.signature = signatureUrl;
@@ -359,8 +350,14 @@
           method: 'POST',
           body: JSON.stringify(formData),
           headers: { 'Content-Type': 'application/json' },
+          redirect: 'follow'
         });
-        if (!response.ok) throw new Error('儲存失敗：試算表存取錯誤');
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`儲存失敗：${errorText}`);
+        }
+        const result = await response.json();
+        if (!result.success) throw new Error('儲存失敗：後端未成功處理');
         showError('提交成功！');
         document.getElementById('consultationForm').reset();
         document.getElementById('signaturePreview').classList.add('hidden');
@@ -371,20 +368,30 @@
         document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
         window.dispatchEvent(new Event('load'));
       } catch (error) {
-        showError(`提交失敗：${error.message}`);
+        showError(`提交失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或試算表存取權限。`);
+        console.error('提交失敗：', error);
       }
     }
 
     // 上傳簽名到 Google Drive
     async function uploadSignature(dataUrl) {
-      const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
-        method: 'POST',
-        body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error('簽名上傳失敗');
-      return result.url;
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
+          method: 'POST',
+          body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
+          headers: { 'Content-Type': 'application/json' },
+          redirect: 'follow'
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`簽名上傳失敗：${errorText}`);
+        }
+        const result = await response.json();
+        if (!result.success) throw new Error('簽名上傳失敗');
+        return result.url;
+      } catch (error) {
+        throw new Error(`簽名上傳失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或 Google Drive 存取權限。`);
+      }
     }
   </script>
 </body>
