@@ -1,0 +1,456 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>疾病全人照護諮詢</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="container mx-auto p-6 max-w-3xl">
+    <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
+    <h3 id="subtitle" class="text-lg text-center mb-6">關於您的疾病照護，對診斷、計畫、生活、追蹤或家人支持，有沒有哪裡讓您擔心、想多了解的地方呢？有沒有什麼的做法可以用？</h3>
+    <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
+      <!-- 病歷號碼 和 病人來源 -->
+      <div class="mb-4 flex space-x-4">
+        <div class="w-1/2">
+          <label class="block text-lg font-medium mb-2" for="patientId">病歷號碼</label>
+          <input type="text" id="patientId" class="w-full p-2 border rounded-lg text-lg" placeholder="輸入病歷號碼">
+        </div>
+        <div class="w-1/2">
+          <label class="block text-lg font-medium mb-2" for="patientSource">病人來源</label>
+          <select id="patientSource" class="w-full p-2 border rounded-lg text-lg">
+            <option value="">請選擇</option>
+            <option value="門診">門診</option>
+            <option value="住院">住院</option>
+            <option value="急診">急診</option>
+            <option value="社區">社區</option>
+            <option value="居家">居家</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 疾病照護類型 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2" for="issueType">疾病照護類型</label>
+        <select id="issueType" class="w-full p-2 border rounded-lg text-lg">
+          <option value="">請選擇</option>
+        </select>
+      </div>
+
+      <!-- 問題分類 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2" for="category">問題分類</label>
+        <select id="category" class="w-full p-2 border rounded-lg text-lg">
+          <option value="">請選擇</option>
+        </select>
+      </div>
+
+      <!-- 問題內容 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2" for="userInput">諮詢單問題</label>
+        <select id="userInput" class="w-full p-2 border rounded-lg text-lg">
+          <option value="">請選擇問題</option>
+        </select>
+      </div>
+
+      <!-- 醫療人員回應 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2" for="staffResponse">醫療人員回應 *</label>
+        <textarea id="staffResponse" class="w-full p-2 border rounded-lg text-lg" rows="4" required></textarea>
+      </div>
+
+      <!-- 醫療人員資料 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2">醫療人員資料 *</label>
+        <div class="flex space-x-4">
+          <input type="text" id="staffId" class="w-1/2 p-2 border rounded-lg text-lg" placeholder="輸入員工編號" required>
+          <select id="staffRole" class="w-1/2 p-2 border rounded-lg text-lg" required>
+            <option value="">-- 選擇角色 --</option>
+            <option value="藥師">藥師</option>
+            <option value="護理師">護理師</option>
+            <option value="個案管理師">個案管理師</option>
+            <option value="營養師">營養師</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 滿意度評分 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2">滿意度評分（1-10 分）</label>
+        <div class="mb-2">
+          <label for="rating1" class="text-lg">❶ 治療與用藥說明（生理照護）: <span id="rating1Value">1</span></label>
+          <input type="range" id="rating1" min="1" max="10" value="1" class="w-full">
+        </div>
+        <div class="mb-2">
+          <label for="rating2" class="text-lg">❷ 生活與情緒關心（心理支持）: <span id="rating2Value">1</span></label>
+          <input type="range" id="rating2" min="1" max="10" value="1" class="w-full">
+        </div>
+        <div>
+          <label for="rating3" class="text-lg">❸ 家人照顧與協助（社會支持）: <span id="rating3Value">1</span></label>
+          <input type="range" id="rating3" min="1" max="10" value="1" class="w-full">
+        </div>
+      </div>
+
+      <!-- 病患簽名 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2">病患簽名（可拍照上傳）</label>
+        <input type="file" id="signatureUpload" accept="image/*" class="w-full p-2 border rounded-lg text-lg">
+        <img id="signaturePreview" class="mt-2 hidden w-full max-w-xs border rounded-lg" alt="簽名預覽">
+      </div>
+
+      <!-- 提交按鈕 -->
+      <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition">提交</button>
+    </form>
+    <div id="message" class="mt-4 text-center text-lg text-red-500"></div>
+  </div>
+
+  <script>
+    // 設定後端與試算表相關的變數（需替換為您自己的值）
+    const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0'; // 疾病全人照護QA試算表ID
+    const RECORD_SPREADSHEET_ID = '1R1fc1Hg7aWlacWQYyPGNlOploKdg4dY_K7eXjvLyEeE'; // 疾病全人照護紀錄試算表ID
+    const SIGNATURE_FOLDER_ID = '1llJYscx3uh2uB1E72Exhd0ZbGTIdsXQd'; // Google Drive簽名資料夾ID
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyedh1BBCzRKURfDsFnopiTQlPn81lWVkp5bVAXXh2sBAT8VCkAKQMSNzKMrDjIszxhMg/exec'; // Google Apps Script 網路應用程式 URL
+
+    // 顯示錯誤訊息的函數
+    function showError(message) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = message;
+      messageDiv.classList.add('text-red-500');
+    }
+
+    // 載入疾病照護類型（從試算表分頁名稱取得）
+    window.addEventListener('load', async () => {
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
+          method: 'GET',
+          mode: 'no-cors' // 使用 no-cors 模式避免 CORS 問題
+        });
+        const text = await response.text();
+        const diseaseTypes = JSON.parse(text || '{}');
+        if (diseaseTypes.error) throw new Error(diseaseTypes.error);
+        const issueTypeSelect = document.getElementById('issueType');
+        issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
+        if (diseaseTypes.length === 0) {
+          showError('試算表中無分頁，請檢查疾病全人照護QA試算表');
+          return;
+        }
+        diseaseTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          issueTypeSelect.appendChild(option);
+        });
+      } catch (error) {
+        showError(`載入疾病照護類型失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
+        console.error('載入疾病照護類型失敗：', error);
+      }
+    });
+
+    // 當選擇疾病照護類型時，更新副標題並載入問題分類
+    document.getElementById('issueType').addEventListener('change', () => {
+      const issueType = document.getElementById('issueType').value;
+      document.getElementById('subtitle').textContent = `關於您的${issueType || '疾病照護'}，對診斷、計畫、生活、追蹤或家人支持，有沒有哪裡讓您擔心、想多了解的地方呢？有沒有什麼的做法可以用？`;
+      document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
+      document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
+      document.getElementById('staffResponse').value = '';
+      loadCategories();
+    });
+
+    // 載入問題分類（從試算表欄 A 取得）
+    async function loadCategories() {
+      const issueType = document.getElementById('issueType').value;
+      if (!issueType) return;
+
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, {
+          method: 'GET',
+          mode: 'no-cors'
+        });
+        const text = await response.text();
+        const categories = JSON.parse(text || '{}');
+        if (categories.error) throw new Error(categories.error);
+        const categorySelect = document.getElementById('category');
+        categorySelect.innerHTML = '<option value="">請選擇</option>';
+        if (categories.length === 0) {
+          showError(`疾病 ${issueType} 的試算表分頁無問題分類資料`);
+          return;
+        }
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          categorySelect.appendChild(option);
+        });
+      } catch (error) {
+        showError(`載入問題分類失敗：${error.message}`);
+      }
+    }
+
+    // 載入問題內容（從試算表欄 B 取得）
+    document.getElementById('category').addEventListener('change', async () => {
+      const issueType = document.getElementById('issueType').value;
+      const category = document.getElementById('category').value;
+      if (!issueType || !category) return;
+
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, {
+          method: 'GET',
+          mode: 'no-cors'
+        });
+        const text = await response.text();
+        const questions = JSON.parse(text || '{}');
+        if (questions.error) throw new Error(questions.error);
+        const userInputSelect = document.getElementById('userInput');
+        userInputSelect.innerHTML = '<option value="">請選擇問題</option>';
+        if (questions.length === 0) {
+          showError(`分類 ${category} 無問題內容`);
+          return;
+        }
+        questions.forEach(q => {
+          const option = document.createElement('option');
+          option.value = q.question;
+          option.textContent = q.question;
+          userInputSelect.appendChild(option);
+        });
+      } catch (error) {
+        showError(`載入問題失敗：${error.message}`);
+      }
+    });
+
+    // 自動填入醫療人員回應（從試算表欄 C 取得）
+    document.getElementById('userInput').addEventListener('change', async () => {
+      const issueType = document.getElementById('issueType').value;
+      const category = document.getElementById('category').value;
+      const question = document.getElementById('userInput').value;
+      if (!question) return;
+
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, {
+          method: 'GET',
+          mode: 'no-cors'
+        });
+        const text = await response.text();
+        const result = JSON.parse(text || '{}');
+        if (result.error) throw new Error(result.error);
+        document.getElementById('staffResponse').value = result.response || '';
+      } catch (error) {
+        showError(`載入回應失敗：${error.message}`);
+      }
+    });
+
+    // 簽名圖片預覽
+    document.getElementById('signatureUpload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const preview = document.getElementById('signaturePreview');
+          preview.src = e.target.result;
+          preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 滿意度滑桿即時更新數字
+    ['rating1', 'rating2', 'rating3'].forEach(id => {
+      const slider = document.getElementById(id);
+      const valueSpan = document.getElementById(`${id}Value`);
+      if (!slider || !valueSpan) {
+        showError(`找不到滿意度滑桿或數字顯示元素：${id}`);
+        return;
+      }
+      slider.addEventListener('input', () => {
+        valueSpan.textContent = slider.value;
+      });
+      slider.addEventListener('change', () => {
+        valueSpan.textContent = slider.value;
+      });
+    });
+
+    // 表單提交
+    document.getElementById('consultationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = document.getElementById('message');
+      message.textContent = '';
+
+      // 驗證必填欄位
+      const requiredFields = [
+        { id: 'staffResponse', label: '醫療人員回應' },
+        { id: 'staffId', label: '醫療人員編號' },
+        { id: 'staffRole', label: '醫療人員角色' }
+      ];
+      for (const field of requiredFields) {
+        if (!document.getElementById(field.id).value) {
+          showError(`請填寫${field.label}`);
+          return;
+        }
+      }
+
+      // 收集表單資料
+      const formData = {
+        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+        patientId: document.getElementById('patientId').value,
+        patientSource: document.getElementById('patientSource').value,
+        issueType: document.getElementById('issueType').value,
+        category: document.getElementById('category').value,
+        userInput: document.getElementById('userInput').value,
+        staffResponse: document.getElementById('staffResponse').value,
+        staffId: document.getElementById('staffId').value,
+        staffRole: document.getElementById('staffRole').value,
+        rating1: document.getElementById('rating1').value,
+        rating2: document.getElementById('rating2').value,
+        rating3: document.getElementById('rating3').value,
+      };
+
+      // 加密敏感資料並儲存到本地
+      const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(formData), 'secret-key').toString();
+      localStorage.setItem('tempFormData', encryptedData);
+
+      // 上傳簽名（如果有）
+      const signatureFile = document.getElementById('signatureUpload').files[0];
+      if (signatureFile) {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const signatureData = reader.result;
+          try {
+            const signatureUrl = await uploadSignature(signatureData);
+            formData.signature = signatureUrl;
+            await submitFormData(formData);
+          } catch (error) {
+            showError(`簽名上傳失敗：${error.message}`);
+          }
+        };
+        reader.readAsDataURL(signatureFile);
+      } else {
+        await submitFormData(formData);
+      }
+    });
+
+    // 提交表單資料到試算表
+    async function submitFormData(formData) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(formData),
+          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors' // 使用 no-cors 模式避免 CORS 問題
+        });
+        const text = await response.text();
+        const result = text ? JSON.parse(text) : { success: true };
+        if (result.error) throw new Error(result.error);
+        showError('提交成功！');
+        document.getElementById('consultationForm').reset();
+        document.getElementById('signaturePreview').classList.add('hidden');
+        localStorage.removeItem('tempFormData');
+        document.getElementById('subtitle').textContent = '關於您的疾病照護，對診斷、計畫、生活、追蹤或家人支持，有沒有哪裡讓您擔心、想多了解的地方呢？有沒有什麼的做法可以用？';
+        document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
+        document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
+        document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
+        window.dispatchEvent(new Event('load'));
+      } catch (error) {
+        showError(`提交失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
+        console.error('提交失敗：', error);
+      }
+    }
+
+    // 上傳簽名到 Google Drive
+    async function uploadSignature(dataUrl) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
+          method: 'POST',
+          body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
+          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors'
+        });
+        const text = await response.text();
+        const result = JSON.parse(text || '{}');
+        if (result.error || !result.success) throw new Error(result.error || '簽名上傳失敗');
+        return result.url;
+      } catch (error) {
+        throw new Error(`簽名上傳失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或 Google Drive 存取權限。`);
+      }
+    }
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9385b52a69e04529',t:'MTc0NjAwMjE0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
