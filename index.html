@@ -43,14 +43,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TYGH疾病全人照護諮詢</title>
+  <title>疾病全人照護諮詢</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6 max-w-3xl">
     <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
-    <h3 id="subtitle" class="text-lg text-center mb-6">關於您的疾病照護，對整體治療、生活、追蹤或家人照顧，有沒有哪裡讓您擔心、想多了解的地方呢？</h3>
+    <h3 id="subtitle" class="text-lg text-center mb-6">關於您的疾病照護，對診斷、計畫、生活、追蹤或家人支持，有沒有哪裡讓您擔心、想多了解的地方呢？有沒有什麼的做法可以用？</h3>
     <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
       <!-- 病歷號碼 和 病人來源 -->
       <div class="mb-4 flex space-x-4">
@@ -151,7 +151,7 @@
     const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0'; // 疾病全人照護QA試算表ID
     const RECORD_SPREADSHEET_ID = '1R1fc1Hg7aWlacWQYyPGNlOploKdg4dY_K7eXjvLyEeE'; // 疾病全人照護紀錄試算表ID
     const SIGNATURE_FOLDER_ID = '1llJYscx3uh2uB1E72Exhd0ZbGTIdsXQd'; // Google Drive簽名資料夾ID
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyc-a_Zr2E8b0iqhjxlq89y4TK2rxUzPrmKipKW4nsP0ZQqHjROIVw7xfMAUo_yQZ14/exec'; // Google Apps Script 網路應用程式 URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyedh1BBCzRKURfDsFnopiTQlPn81lWVkp5bVAXXh2sBAT8VCkAKQMSNzKMrDjIszxhMg/exec'; // Google Apps Script 網路應用程式 URL
 
     // 顯示錯誤訊息的函數
     function showError(message) {
@@ -294,7 +294,6 @@
       });
     });
 
-
     // 表單提交
     document.getElementById('consultationForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -360,48 +359,34 @@
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify(formData),
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`儲存失敗：${errorText}`);
-        }
-        const result = await response.json();
-        if (result.error || !result.success) throw new Error(result.error || '儲存失敗');
+        if (!response.ok) throw new Error('儲存失敗：試算表存取錯誤');
         showError('提交成功！');
         document.getElementById('consultationForm').reset();
         document.getElementById('signaturePreview').classList.add('hidden');
         localStorage.removeItem('tempFormData');
-        document.getElementById('subtitle').textContent = '關於您的疾病照護，對整體治療、生活、追蹤或家人照顧，有沒有哪裡讓您擔心、想多了解的地方呢？';
+        document.getElementById('subtitle').textContent = '關於您的疾病照護，對診斷、計畫、生活、追蹤或家人支持，有沒有哪裡讓您擔心、想多了解的地方呢？有沒有什麼的做法可以用？';
         document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
         document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
         document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
         window.dispatchEvent(new Event('load'));
       } catch (error) {
-        showError(`提交失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
-        console.error('提交失敗：', error);
+        showError(`提交失敗：${error.message}`);
       }
     }
 
     // 上傳簽名到 Google Drive
     async function uploadSignature(dataUrl) {
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
-          method: 'POST',
-          body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`簽名上傳失敗：${errorText}`);
-        }
-        const result = await response.json();
-        if (result.error || !result.success) throw new Error(result.error || '簽名上傳失敗');
-        return result.url;
-      } catch (error) {
-        throw new Error(`簽名上傳失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或 Google Drive 存取權限。`);
-      }
+      const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
+        method: 'POST',
+        body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error('簽名上傳失敗');
+      return result.url;
     }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9385b52a69e04529',t:'MTc0NjAwMjE0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
