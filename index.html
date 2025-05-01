@@ -153,6 +153,14 @@
   </div>
 
   <script>
+// 密碼保護程式碼（放在最上方）
+    const password = prompt('請輸入密碼以存取系統：');
+    if (password !== '7110ER') { // 替換為您設定的密碼
+      alert('密碼錯誤，無法存取系統。');
+      document.body.innerHTML = '<h1>存取被拒絕</h1>';
+      throw new Error('存取被拒絕');
+    }
+
     // 設定後端 URL
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhrFYg-SwZGdPL04_qKcWKqeifPmeIQeURtH3iiYXB6ODxJzyYMYFSUAh-TwUsaSKuVQ/exec'; // 確保這是您最新的 Google Apps Script 部署 URL
 
