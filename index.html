@@ -1,3 +1,4 @@
+
 <script type="text/javascript">
         var gk_isXlsx = false;
         var gk_xlsxFileLookup = {};
@@ -49,7 +50,7 @@
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6 max-w-3xl">
     <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
-    <h3 id="subtitle" class="text-lg text-center mb-6">關於您的疾病照護，，對整體治療、生活、追蹤或家人照顧，有沒有哪裡讓您擔心、想多了解的地方呢？</h3>
+    <h3 id="subtitle" class="text-lg text-center mb-6">關於您的疾病照護，對整體治療、生活、追蹤或家人照顧，有沒有哪裡讓您擔心、想多了解的地方呢？</h3>
     <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
       <!-- 病歷號碼 和 病人來源 -->
       <div class="mb-4 flex space-x-4">
@@ -119,15 +120,15 @@
       <div class="mb-4">
         <label class="block text-lg font-medium mb-2">滿意度評分（1-10 分）</label>
         <div class="mb-2">
-          <label for="rating1" class="text-lg">❶ 我對治療與用藥說明感到滿意（生理照護）: <span id="rating1Value">1</span></label>
+          <label for="rating1" class="text-lg">❶ 治療與用藥說明（生理照護）: <span id="rating1Value">1</span></label>
           <input type="range" id="rating1" min="1" max="10" value="1" class="w-full">
         </div>
         <div class="mb-2">
-          <label for="rating2" class="text-lg">❷ 我在生活與情緒上有被好好關心（心理支持）: <span id="rating2Value">1</span></label>
+          <label for="rating2" class="text-lg">❷ 生活與情緒關心（心理支持）: <span id="rating2Value">1</span></label>
           <input type="range" id="rating2" min="1" max="10" value="1" class="w-full">
         </div>
         <div>
-          <label for="rating3" class="text-lg">❸ 我的家人有被一起照顧與協助（社會支持）: <span id="rating3Value">1</span></label>
+          <label for="rating3" class="text-lg">❸ 家人照顧與協助（社會支持）: <span id="rating3Value">1</span></label>
           <input type="range" id="rating3" min="1" max="10" value="1" class="w-full">
         </div>
       </div>
@@ -146,11 +147,11 @@
   </div>
 
   <script>
-    // 設定後端與試算表相關的變數
-    const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0';
-    const RECORD_SPREADSHEET_ID = '1R1fc1Hg7aWlacWQYyPGNlOploKdg4dY_K7eXjvLyEeE';
-    const SIGNATURE_FOLDER_ID = '1llJYscx3uh2uB1E72Exhd0ZbGTIdsXQd';
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyc-a_Zr2E8b0iqhjxlq89y4TK2rxUzPrmKipKW4nsP0ZQqHjROIVw7xfMAUo_yQZ14/exec';
+    // 設定後端與試算表相關的變數（需替換為您自己的值）
+    const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0'; // 疾病全人照護QA試算表ID
+    const RECORD_SPREADSHEET_ID = '1R1fc1Hg7aWlacWQYyPGNlOploKdg4dY_K7eXjvLyEeE'; // 疾病全人照護紀錄試算表ID
+    const SIGNATURE_FOLDER_ID = '1llJYscx3uh2uB1E72Exhd0ZbGTIdsXQd'; // Google Drive簽名資料夾ID
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyc-a_Zr2E8b0iqhjxlq89y4TK2rxUzPrmKipKW4nsP0ZQqHjROIVw7xfMAUo_yQZ14/exec'; // Google Apps Script 網路應用程式 URL
 
     // 顯示錯誤訊息的函數
     function showError(message) {
@@ -159,32 +160,12 @@
       messageDiv.classList.add('text-red-500');
     }
 
-    // 檢查後端連線
-    async function checkBackendConnection() {
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=ping', {
-          method: 'GET'
-        });
-        if (!response.ok) throw new Error('無法連接到後端服務');
-        return true;
-      } catch (error) {
-        showError(`後端連線失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
-        console.error('後端連線失敗：', error);
-        return false;
-      }
-    }
-
-    // 載入疾病照護類型
+    // 載入疾病照護類型（從試算表分頁名稱取得）
     window.addEventListener('load', async () => {
-      if (!(await checkBackendConnection())) return;
-
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
-          method: 'GET'
-        });
-        if (!response.ok) throw new Error('無法載入疾病照護類型');
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`);
+        if (!response.ok) throw new Error('無法連接到後端服務，請檢查 GOOGLE_SCRIPT_URL');
         const diseaseTypes = await response.json();
-        if (diseaseTypes.error) throw new Error(diseaseTypes.error);
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
         if (diseaseTypes.length === 0) {
@@ -206,25 +187,22 @@
     // 當選擇疾病照護類型時，更新副標題並載入問題分類
     document.getElementById('issueType').addEventListener('change', () => {
       const issueType = document.getElementById('issueType').value;
-      document.getElementById('subtitle').textContent = `關於您的${issueType || '疾病照護'}，對整體治療、生活、追蹤或家人照顧，有沒有哪裡讓您擔心、想多了解的地方呢？`;
+      document.getElementById('subtitle').textContent = `關於您的${issueType || '疾病照護'}，對診斷、計畫、生活、追蹤或家人支持，有沒有哪裡讓您擔心、想多了解的地方呢？有沒有什麼的做法可以用？`;
       document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
       document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
       document.getElementById('staffResponse').value = '';
       loadCategories();
     });
 
-    // 載入問題分類
+    // 載入問題分類（從試算表欄 A 取得）
     async function loadCategories() {
       const issueType = document.getElementById('issueType').value;
       if (!issueType) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, {
-          method: 'GET'
-        });
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`);
         if (!response.ok) throw new Error('無法載入問題分類');
         const categories = await response.json();
-        if (categories.error) throw new Error(categories.error);
         const categorySelect = document.getElementById('category');
         categorySelect.innerHTML = '<option value="">請選擇</option>';
         if (categories.length === 0) {
@@ -242,19 +220,16 @@
       }
     }
 
-    // 載入問題內容
+    // 載入問題內容（從試算表欄 B 取得）
     document.getElementById('category').addEventListener('change', async () => {
       const issueType = document.getElementById('issueType').value;
       const category = document.getElementById('category').value;
       if (!issueType || !category) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, {
-          method: 'GET'
-        });
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`);
         if (!response.ok) throw new Error('無法載入問題內容');
         const questions = await response.json();
-        if (questions.error) throw new Error(questions.error);
         const userInputSelect = document.getElementById('userInput');
         userInputSelect.innerHTML = '<option value="">請選擇問題</option>';
         if (questions.length === 0) {
@@ -272,7 +247,7 @@
       }
     });
 
-    // 自動填入醫療人員回應
+    // 自動填入醫療人員回應（從試算表欄 C 取得）
     document.getElementById('userInput').addEventListener('change', async () => {
       const issueType = document.getElementById('issueType').value;
       const category = document.getElementById('category').value;
@@ -280,12 +255,9 @@
       if (!question) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, {
-          method: 'GET'
-        });
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`);
         if (!response.ok) throw new Error('無法載入醫療人員回應');
         const result = await response.json();
-        if (result.error) throw new Error(result.error);
         document.getElementById('staffResponse').value = result.response || '';
       } catch (error) {
         showError(`載入回應失敗：${error.message}`);
@@ -321,6 +293,7 @@
         valueSpan.textContent = slider.value;
       });
     });
+
 
     // 表單提交
     document.getElementById('consultationForm').addEventListener('submit', async (e) => {
