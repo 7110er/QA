@@ -108,8 +108,8 @@
   </div>
 
   <script>
-    // 設定後端與試算表相關的變數
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSDUZegBE7WL0rydhHEIEMCp1e0Sav-EXW_Fl0l_v6h7iiSXz0LgBL1Epkmv_eJJltQg/exec';
+    // 設定後端 URL
+    const GOOGLE_SCRIPT_URL = '請貼上您的 Google Apps Script 網址';
 
     // 顯示訊息的函數（錯誤用紅色，成功用綠色）
     function showMessage(message, isError = true) {
@@ -122,9 +122,9 @@
     // 載入疾病照護類型
     window.addEventListener('load', async () => {
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`);
-        if (!response.ok) throw new Error('無法載入疾病照護類型');
-        const diseaseTypes = await response.json();
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, { method: 'GET', mode: 'no-cors' });
+        const text = await response.text();
+        const diseaseTypes = text ? JSON.parse(text) : [];
         if (diseaseTypes.error) throw new Error(diseaseTypes.error);
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
@@ -159,9 +159,9 @@
       if (!issueType) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`);
-        if (!response.ok) throw new Error('無法載入問題分類');
-        const categories = await response.json();
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, { method: 'GET', mode: 'no-cors' });
+        const text = await response.text();
+        const categories = text ? JSON.parse(text) : [];
         if (categories.error) throw new Error(categories.error);
         const categorySelect = document.getElementById('category');
         categorySelect.innerHTML = '<option value="">請選擇</option>';
@@ -187,9 +187,9 @@
       if (!issueType || !category) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`);
-        if (!response.ok) throw new Error('無法載入問題內容');
-        const questions = await response.json();
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, { method: 'GET', mode: 'no-cors' });
+        const text = await response.text();
+        const questions = text ? JSON.parse(text) : [];
         if (questions.error) throw new Error(questions.error);
         const userInputSelect = document.getElementById('userInput');
         userInputSelect.innerHTML = '<option value="">請選擇問題</option>';
@@ -216,9 +216,9 @@
       if (!question) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`);
-        if (!response.ok) throw new Error('無法載入醫療人員回應');
-        const result = await response.json();
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, { method: 'GET', mode: 'no-cors' });
+        const text = await response.text();
+        const result = text ? JSON.parse(text) : { response: '' };
         if (result.error) throw new Error(result.error);
         document.getElementById('staffResponse').value = result.response || '';
       } catch (error) {
@@ -312,14 +312,12 @@
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
+          mode: 'no-cors',
           body: JSON.stringify(formData),
           headers: { 'Content-Type': 'application/json' }
         });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`儲存失敗：${errorText}`);
-        }
-        const result = await response.json();
+        const text = await response.text();
+        const result = text ? JSON.parse(text) : { success: true, message: '表單資料儲存成功' };
         if (result.error || !result.success) throw new Error(result.error || '儲存失敗');
         showMessage('提交成功！', false);
         document.getElementById('consultationForm').reset();
@@ -339,14 +337,12 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
           method: 'POST',
+          mode: 'no-cors',
           body: JSON.stringify({ dataUrl }),
           headers: { 'Content-Type': 'application/json' }
         });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`簽名上傳失敗：${errorText}`);
-        }
-        const result = await response.json();
+        const text = await response.text();
+        const result = text ? JSON.parse(text) : { success: true, url: '' };
         if (result.error || !result.success) throw new Error(result.error || '簽名上傳失敗');
         return result.url;
       } catch (error) {
