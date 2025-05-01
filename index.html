@@ -160,6 +160,24 @@
       messageDiv.classList.add('text-red-500');
     }
 
+// 檢查後端連線
+    async function checkBackendConnection() {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=ping', {
+          method: 'GET'
+        });
+        if (!response.ok) throw new Error('無法連接到後端服務');
+        return true;
+      } catch (error) {
+        showError(`後端連線失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
+        console.error('後端連線失敗：', error);
+        return false;
+      }
+    }
+
+
+
+
     // 載入疾病照護類型（從試算表分頁名稱取得）
     window.addEventListener('load', async () => {
       try {
@@ -313,7 +331,8 @@
         }
       }
 
-      // 收集表單資料
+      
+// 收集表單資料
       const formData = {
         timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
         patientId: document.getElementById('patientId').value,
@@ -359,9 +378,14 @@
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify(formData),
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' }
         });
-        if (!response.ok) throw new Error('儲存失敗：試算表存取錯誤');
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`儲存失敗：${errorText}`);
+        }
+        const result = await response.json();
+        if (result.error || !result.success) throw new Error(result.error || '儲存失敗');
         showError('提交成功！');
         document.getElementById('consultationForm').reset();
         document.getElementById('signaturePreview').classList.add('hidden');
@@ -372,21 +396,30 @@
         document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
         window.dispatchEvent(new Event('load'));
       } catch (error) {
-        showError(`提交失敗：${error.message}`);
+        showError(`提交失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
+        console.error('提交失敗：', error);
       }
     }
 
     // 上傳簽名到 Google Drive
     async function uploadSignature(dataUrl) {
-      const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
-        method: 'POST',
-        body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error('簽名上傳失敗');
-      return result.url;
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=uploadSignature', {
+          method: 'POST',
+          body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`簽名上傳失敗：${errorText}`);
+        }
+        const result = await response.json();
+        if (result.error || !result.success) throw new Error(result.error || '簽名上傳失敗');
+        return result.url;
+      } catch (error) {
+        throw new Error(`簽名上傳失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或 Google Drive 存取權限。`);
+      }
     }
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9385b52a69e04529',t:'MTc0NjAwMjE0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
