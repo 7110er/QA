@@ -1,35 +1,3 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-</script>
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -140,10 +108,7 @@
 
   <script>
     // 設定後端與試算表相關的變數
-    const QA_SPREADSHEET_ID = '1cUGjb-EHFrJ28YivE_8W3ea6kINmyGK2NMkwZfTqsc0';
-    const RECORD_SPREADSHEET_ID = '1R1fc1Hg7aWlacWQYyPGNlOploKdg4dY_K7eXjvLyEeE';
-    const SIGNATURE_FOLDER_ID = '1llJYscx3uh2uB1E72Exhd0ZbGTIdsXQd';
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyedh1BBCzRKURfDsFnopiTQlPn81lWVkp5bVAXXh2sBAT8VCkAKQMSNzKMrDjIszxhMg/exec'; // 替換為最新的 Google Apps Script URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSDUZegBE7WL0rydhHEIEMCp1e0Sav-EXW_Fl0l_v6h7iiSXz0LgBL1Epkmv_eJJltQg/exec';
 
     // 顯示訊息的函數（錯誤用紅色，成功用綠色）
     function showMessage(message, isError = true) {
@@ -153,25 +118,8 @@
       messageDiv.classList.add(isError ? 'text-red-500' : 'text-green-500');
     }
 
-    // 檢查後端連線
-    async function checkBackendConnection() {
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=ping`);
-        if (!response.ok) throw new Error('無法連接到後端服務');
-        const result = await response.json();
-        if (!result.success) throw new Error(result.error || '後端服務異常');
-        return true;
-      } catch (error) {
-        showMessage(`後端連線失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
-        console.error('後端連線失敗：', error);
-        return false;
-      }
-    }
-
     // 載入疾病照護類型
     window.addEventListener('load', async () => {
-      if (!(await checkBackendConnection())) return;
-
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`);
         if (!response.ok) throw new Error('無法載入疾病照護類型');
@@ -191,7 +139,6 @@
         });
       } catch (error) {
         showMessage(`載入疾病照護類型失敗：${error.message}`);
-        console.error('載入疾病照護類型失敗：', error);
       }
     });
 
@@ -229,7 +176,6 @@
         });
       } catch (error) {
         showMessage(`載入問題分類失敗：${error.message}`);
-        console.error('載入問題分類失敗：', error);
       }
     }
 
@@ -258,7 +204,6 @@
         });
       } catch (error) {
         showMessage(`載入問題失敗：${error.message}`);
-        console.error('載入問題失敗：', error);
       }
     });
 
@@ -277,7 +222,6 @@
         document.getElementById('staffResponse').value = result.response || '';
       } catch (error) {
         showMessage(`載入回應失敗：${error.message}`);
-        console.error('載入回應失敗：', error);
       }
     });
 
@@ -299,10 +243,6 @@
     ['rating1', 'rating2', 'rating3'].forEach(id => {
       const slider = document.getElementById(id);
       const valueSpan = document.getElementById(`${id}Value`);
-      if (!slider || !valueSpan) {
-        showMessage(`找不到滿意度滑桿或數字顯示元素：${id}`);
-        return;
-      }
       slider.addEventListener('input', () => {
         valueSpan.textContent = slider.value;
       });
@@ -346,10 +286,6 @@
         rating3: document.getElementById('rating3').value,
       };
 
-      // 加密敏感資料並儲存到本地
-      const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(formData), 'secret-key').toString();
-      localStorage.setItem('tempFormData', encryptedData);
-
       // 上傳簽名（如果有）
       const signatureFile = document.getElementById('signatureUpload').files[0];
       if (signatureFile) {
@@ -387,15 +323,13 @@
         showMessage('提交成功！', false);
         document.getElementById('consultationForm').reset();
         document.getElementById('signaturePreview').classList.add('hidden');
-        localStorage.removeItem('tempFormData');
         document.getElementById('subtitle').textContent = '關於您的疾病照護，對整體治療、生活、追蹤或家人照顧，有沒有哪裡讓您擔心、想多了解的地方呢？';
         document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
         document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
         document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
         window.dispatchEvent(new Event('load'));
       } catch (error) {
-        showMessage(`提交失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或後端部署。`);
-        console.error('提交失敗：', error);
+        showMessage(`提交失敗：${error.message}`);
       }
     }
 
@@ -404,7 +338,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
           method: 'POST',
-          body: JSON.stringify({ dataUrl, folderId: SIGNATURE_FOLDER_ID }),
+          body: JSON.stringify({ dataUrl }),
           headers: { 'Content-Type': 'application/json' }
         });
         if (!response.ok) {
@@ -415,7 +349,7 @@
         if (result.error || !result.success) throw new Error(result.error || '簽名上傳失敗');
         return result.url;
       } catch (error) {
-        throw new Error(`簽名上傳失敗：${error.message}。請檢查 GOOGLE_SCRIPT_URL 或 Google Drive 存取權限。`);
+        throw new Error(`簽名上傳失敗：${error.message}`);
       }
     }
   </script>
