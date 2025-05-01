@@ -25,7 +25,6 @@
             <option value="門診">門診</option>
             <option value="住院">住院</option>
             <option value="急診">急診</option>
-            <option value="新屋分院">新屋分院</option>
             <option value="社區">社區</option>
             <option value="居家">居家</option>
           </select>
@@ -109,7 +108,7 @@
 
   <script>
     // 設定後端 URL
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhWS4APiNwrnAQ6AYI8YxD4mJM_bNkvekHQ801adwg2NNXkY6nVkqrCfgsaMPoHCrTag/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhWS4APiNwrnAQ6AYI8YxD4mJM_bNkvekHQ801adwg2NNXkY6nVkqrCfgsaMPoHCrTag/exec'; // 確保這是您最新的 Google Apps Script 部署 URL
 
     // 顯示訊息的函數（錯誤用紅色，成功用綠色）
     function showMessage(message, isError = true) {
@@ -122,13 +121,20 @@
     // 載入疾病照護類型
     window.addEventListener('load', async () => {
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, { method: 'GET', mode: 'no-cors' });
-        const text = await response.text();
-        const diseaseTypes = text ? JSON.parse(text) : [];
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
+        }
+        const diseaseTypes = await response.json();
         if (diseaseTypes.error) throw new Error(diseaseTypes.error);
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
-        if (diseaseTypes.length === 0) {
+        if (!Array.isArray(diseaseTypes) || diseaseTypes.length === 0) {
           showMessage('試算表中無分頁，請檢查疾病全人照護QA試算表');
           return;
         }
@@ -140,6 +146,7 @@
         });
       } catch (error) {
         showMessage(`載入疾病照護類型失敗：${error.message}`);
+        console.error('載入疾病照護類型錯誤：', error);
       }
     });
 
@@ -159,13 +166,20 @@
       if (!issueType) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, { method: 'GET', mode: 'no-cors' });
-        const text = await response.text();
-        const categories = text ? JSON.parse(text) : [];
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
+        }
+        const categories = await response.json();
         if (categories.error) throw new Error(categories.error);
         const categorySelect = document.getElementById('category');
         categorySelect.innerHTML = '<option value="">請選擇</option>';
-        if (categories.length === 0) {
+        if (!Array.isArray(categories) || categories.length === 0) {
           showMessage(`疾病 ${issueType} 的試算表分頁無問題分類資料`);
           return;
         }
@@ -177,6 +191,7 @@
         });
       } catch (error) {
         showMessage(`載入問題分類失敗：${error.message}`);
+        console.error('載入問題分類錯誤：', error);
       }
     }
 
@@ -187,13 +202,20 @@
       if (!issueType || !category) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, { method: 'GET', mode: 'no-cors' });
-        const text = await response.text();
-        const questions = text ? JSON.parse(text) : [];
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
+        }
+        const questions = await response.json();
         if (questions.error) throw new Error(questions.error);
         const userInputSelect = document.getElementById('userInput');
         userInputSelect.innerHTML = '<option value="">請選擇問題</option>';
-        if (questions.length === 0) {
+        if (!Array.isArray(questions) || questions.length === 0) {
           showMessage(`分類 ${category} 無問題內容`);
           return;
         }
@@ -205,6 +227,7 @@
         });
       } catch (error) {
         showMessage(`載入問題失敗：${error.message}`);
+        console.error('載入問題錯誤：', error);
       }
     });
 
@@ -216,13 +239,21 @@
       if (!question) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, { method: 'GET', mode: 'no-cors' });
-        const text = await response.text();
-        const result = text ? JSON.parse(text) : { response: '' };
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
+        }
+        const result = await response.json();
         if (result.error) throw new Error(result.error);
         document.getElementById('staffResponse').value = result.response || '';
       } catch (error) {
         showMessage(`載入回應失敗：${error.message}`);
+        console.error('載入回應錯誤：', error);
       }
     });
 
@@ -312,7 +343,7 @@
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors',
+          mode: 'no-cors', // 提交功能仍使用 no-cors，因為之前已正常運作
           body: JSON.stringify(formData),
           headers: { 'Content-Type': 'application/json' }
         });
@@ -337,7 +368,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
           method: 'POST',
-          mode: 'no-cors',
+          mode: 'no-cors', // 簽名上傳仍使用 no-cors，因為之前已正常運作
           body: JSON.stringify({ dataUrl }),
           headers: { 'Content-Type': 'application/json' }
         });
