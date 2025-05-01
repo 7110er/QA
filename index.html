@@ -59,6 +59,39 @@
       <div class="mb-4">
         <label class="block text-lg font-medium mb-2" for="staffResponse">醫療人員回應 *</label>
         <textarea id="staffResponse" class="w-full p-2 border rounded-lg text-lg" rows="4" required></textarea>
+        <div class="mt-2">
+          <label for="fontSizeSlider" class="text-lg">調整字體大小: <span id="fontSizeValue">16</span>px</label>
+          <input type="range" id="fontSizeSlider" min="16" max="32" value="16" class="w-full">
+        </div>
+      </div>
+
+      <!-- 照會或轉介 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2" for="referral">照會或轉介</label>
+        <select id="referral" class="w-full p-2 border rounded-lg text-lg">
+          <option value="">請選擇</option>
+          <option value="醫師">醫師</option>
+          <option value="中醫師">中醫師</option>
+          <option value="牙醫師">牙醫師</option>
+          <option value="藥師">藥師</option>
+          <option value="護理師">護理師</option>
+          <option value="物理治療師">物理治療師</option>
+          <option value="職能治療師">職能治療師</option>
+          <option value="醫事檢驗師">醫事檢驗師</option>
+          <option value="醫事放射師">醫事放射師</option>
+          <option value="營養師">營養師</option>
+          <option value="助產師">助產師</option>
+          <option value="心理師">心理師</option>
+          <option value="呼吸治療師">呼吸治療師</option>
+          <option value="語言治療師">語言治療師</option>
+          <option value="聽力師">聽力師</option>
+        </select>
+      </div>
+
+      <!-- 全人照護建議 -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2" for="holisticAdvice">全人照護建議</label>
+        <textarea id="holisticAdvice" class="w-full p-2 border rounded-lg text-lg" rows="4"></textarea>
       </div>
 
       <!-- 醫療人員資料 -->
@@ -108,7 +141,7 @@
 
   <script>
     // 設定後端 URL
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhWS4APiNwrnAQ6AYI8YxD4mJM_bNkvekHQ801adwg2NNXkY6nVkqrCfgsaMPoHCrTag/exec'; // 確保這是您最新的 Google Apps Script 部署 URL
+    const GOOGLE_SCRIPT_URL = '請貼上您的 Google Apps Script 網址';
 
     // 顯示訊息的函數（錯誤用紅色，成功用綠色）
     function showMessage(message, isError = true) {
@@ -257,6 +290,13 @@
       }
     });
 
+    // 動態調整醫療人員回應字體大小
+    document.getElementById('fontSizeSlider').addEventListener('input', () => {
+      const fontSize = document.getElementById('fontSizeSlider').value;
+      document.getElementById('fontSizeValue').textContent = fontSize;
+      document.getElementById('staffResponse').style.fontSize = `${fontSize}px`;
+    });
+
     // 簽名圖片預覽
     document.getElementById('signatureUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -313,6 +353,8 @@
         staffResponse: document.getElementById('staffResponse').value,
         staffId: document.getElementById('staffId').value,
         staffRole: document.getElementById('staffRole').value,
+        referral: document.getElementById('referral').value, // 新增欄位：照會或轉介
+        holisticAdvice: document.getElementById('holisticAdvice').value, // 新增欄位：全人照護建議
         rating1: document.getElementById('rating1').value,
         rating2: document.getElementById('rating2').value,
         rating3: document.getElementById('rating3').value,
@@ -343,7 +385,7 @@
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // 提交功能仍使用 no-cors，因為之前已正常運作
+          mode: 'no-cors',
           body: JSON.stringify(formData),
           headers: { 'Content-Type': 'application/json' }
         });
@@ -357,6 +399,9 @@
         document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
         document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
         document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
+        document.getElementById('fontSizeSlider').value = 16;
+        document.getElementById('fontSizeValue').textContent = 16;
+        document.getElementById('staffResponse').style.fontSize = '16px';
         window.dispatchEvent(new Event('load'));
       } catch (error) {
         showMessage(`提交失敗：${error.message}`);
@@ -368,7 +413,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
           method: 'POST',
-          mode: 'no-cors', // 簽名上傳仍使用 no-cors，因為之前已正常運作
+          mode: 'no-cors',
           body: JSON.stringify({ dataUrl }),
           headers: { 'Content-Type': 'application/json' }
         });
