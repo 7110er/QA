@@ -31,20 +31,32 @@
         </div>
       </div>
 
-      <!-- 疾病照護類型 -->
-      <div class="mb-4">
-        <label class="block text-lg font-medium mb-2" for="issueType">疾病照護類型</label>
-        <select id="issueType" class="w-full p-2 border rounded-lg text-lg">
-          <option value="">請選擇</option>
-        </select>
+      <!-- 疾病照護類型 和 搜尋框 -->
+      <div class="mb-4 flex space-x-4">
+        <div class="w-1/2">
+          <label class="block text-lg font-medium mb-2" for="issueType">疾病照護類型</label>
+          <select id="issueType" class="w-full p-2 border rounded-lg text-lg">
+            <option value="">請選擇</option>
+          </select>
+        </div>
+        <div class="w-1/2">
+          <label class="block text-lg font-medium mb-2" for="diseaseSearch">搜尋疾病</label>
+          <input type="text" id="diseaseSearch" class="w-full p-2 border rounded-lg text-lg" placeholder="輸入疾病名稱">
+        </div>
       </div>
 
-      <!-- 問題分類 -->
-      <div class="mb-4">
-        <label class="block text-lg font-medium mb-2" for="category">問題分類</label>
-        <select id="category" class="w-full p-2 border rounded-lg text-lg">
-          <option value="">請選擇</option>
-        </select>
+      <!-- 問題分類 和 搜尋框 -->
+      <div class="mb-4 flex space-x-4">
+        <div class="w-1/2">
+          <label class="block text-lg font-medium mb-2" for="category">問題分類</label>
+          <select id="category" class="w-full p-2 border rounded-lg text-lg">
+            <option value="">請選擇</option>
+          </select>
+        </div>
+        <div class="w-1/2">
+          <label class="block text-lg font-medium mb-2" for="categorySearch">搜尋問題</label>
+          <input type="text" id="categorySearch" class="w-full p-2 border rounded-lg text-lg" placeholder="輸入關鍵字">
+        </div>
       </div>
 
       <!-- 問題內容 -->
@@ -141,7 +153,11 @@
 
   <script>
     // 設定後端 URL
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjn4HcTr4L2zQq0kMUNhzLLoTHrTqRGoJpAJjIPwbSmbj-15IvjpVMTooTvntbNM0Xcw/exec';
+    const GOOGLE_SCRIPT_URL = '請貼上您的 Google Apps Script 網址'; // 確保這是您最新的 Google Apps Script 部署 URL
+
+    // 儲存所有疾病類型和問題資料（用於搜尋）
+    let allDiseaseTypes = [];
+    let allQuestions = [];
 
     // 顯示訊息的函數（錯誤用紅色，成功用綠色）
     function showMessage(message, isError = true) {
@@ -165,6 +181,7 @@
         }
         const diseaseTypes = await response.json();
         if (diseaseTypes.error) throw new Error(diseaseTypes.error);
+        allDiseaseTypes = diseaseTypes; // 儲存所有疾病類型
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
         if (!Array.isArray(diseaseTypes) || diseaseTypes.length === 0) {
@@ -183,6 +200,20 @@
       }
     });
 
+    // 搜尋疾病照護類型
+    document.getElementById('diseaseSearch').addEventListener('input', () => {
+      const searchTerm = document.getElementById('diseaseSearch').value.toLowerCase();
+      const issueTypeSelect = document.getElementById('issueType');
+      issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
+      const filteredTypes = allDiseaseTypes.filter(type => type.toLowerCase().includes(searchTerm));
+      filteredTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        issueTypeSelect.appendChild(option);
+      });
+    });
+
     // 當選擇疾病照護類型時，更新副標題並載入問題分類
     document.getElementById('issueType').addEventListener('change', () => {
       const issueType = document.getElementById('issueType').value;
@@ -190,7 +221,9 @@
       document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
       document.getElementById('userInput').innerHTML = '<option value="">請選擇問題</option>';
       document.getElementById('staffResponse').value = '';
+      document.getElementById('categorySearch').value = ''; // 清空搜尋框
       loadCategories();
+      loadAllQuestions(); // 載入所有問題資料以支援搜尋
     });
 
     // 載入問題分類
@@ -228,6 +261,49 @@
       }
     }
 
+    // 載入所有問題資料（用於搜尋）
+    async function loadAllQuestions() {
+      const issueType = document.getElementById('issueType').value;
+      if (!issueType) return;
+
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${issueType}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
+        }
+        const questions = await response.json();
+        if (questions.error) throw new Error(questions.error);
+        allQuestions = questions; // 儲存所有問題資料
+      } catch (error) {
+        showMessage(`載入問題資料失敗：${error.message}`);
+        console.error('載入問題資料錯誤：', error);
+      }
+    }
+
+    // 搜尋問題分類
+    document.getElementById('categorySearch').addEventListener('input', () => {
+      const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
+      const categorySelect = document.getElementById('category');
+      categorySelect.innerHTML = '<option value="">請選擇</option>';
+      const filteredQuestions = allQuestions.filter(q =>
+        q.category.toLowerCase().includes(searchTerm) ||
+        q.question.toLowerCase().includes(searchTerm) ||
+        q.response.toLowerCase().includes(searchTerm)
+      );
+      const uniqueCategories = [...new Set(filteredQuestions.map(q => q.category))];
+      uniqueCategories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+      });
+    });
+
     // 載入問題內容
     document.getElementById('category').addEventListener('change', async () => {
       const issueType = document.getElementById('issueType').value;
@@ -252,7 +328,19 @@
           showMessage(`分類 ${category} 無問題內容`);
           return;
         }
-        questions.forEach(q => {
+
+        // 若有搜尋關鍵字，過濾問題內容
+        const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
+        const filteredQuestions = searchTerm
+          ? questions.filter(q =>
+              allQuestions.find(aq => aq.question === q.question &&
+                (aq.category.toLowerCase().includes(searchTerm) ||
+                 aq.question.toLowerCase().includes(searchTerm) ||
+                 aq.response.toLowerCase().includes(searchTerm)))
+            )
+          : questions;
+
+        filteredQuestions.forEach(q => {
           const option = document.createElement('option');
           option.value = q.question;
           option.textContent = q.question;
@@ -353,8 +441,8 @@
         staffResponse: document.getElementById('staffResponse').value,
         staffId: document.getElementById('staffId').value,
         staffRole: document.getElementById('staffRole').value,
-        referral: document.getElementById('referral').value, // 新增欄位：照會或轉介
-        holisticAdvice: document.getElementById('holisticAdvice').value, // 新增欄位：全人照護建議
+        referral: document.getElementById('referral').value,
+        holisticAdvice: document.getElementById('holisticAdvice').value,
         rating1: document.getElementById('rating1').value,
         rating2: document.getElementById('rating2').value,
         rating3: document.getElementById('rating3').value,
@@ -402,6 +490,16 @@
         document.getElementById('fontSizeSlider').value = 16;
         document.getElementById('fontSizeValue').textContent = 16;
         document.getElementById('staffResponse').style.fontSize = '16px';
+        // 重設滿意度評分
+        ['rating1', 'rating2', 'rating3'].forEach(id => {
+          const slider = document.getElementById(id);
+          const valueSpan = document.getElementById(`${id}Value`);
+          slider.value = 1;
+          valueSpan.textContent = 1;
+        });
+        document.getElementById('diseaseSearch').value = ''; // 清空搜尋框
+        document.getElementById('categorySearch').value = ''; // 清空搜尋框
+        allQuestions = []; // 清空問題資料
         window.dispatchEvent(new Event('load'));
       } catch (error) {
         showMessage(`提交失敗：${error.message}`);
