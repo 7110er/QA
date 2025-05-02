@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6 max-w-3xl">
-    <h1 class="text-3xl font-bold text-center mb-4">TYGH 疾病全人照護諮詢</h1>
+    <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
     <div id="message" class="mt-4 text-center text-lg"></div>
 
     <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
@@ -26,7 +26,7 @@
             <option value="門診">門診</option>
             <option value="住院">住院</option>
             <option value="急診">急診</option>
-             <option value="新屋分院">新屋分院</option>
+            <option value="新屋分院">新屋分院</option>
             <option value="社區">社區</option>
             <option value="居家">居家</option>
           </select>
@@ -141,12 +141,15 @@
           <option value="">請選擇</option>
           <option value="醫師">醫師</option>
           <option value="中醫師">中醫師</option>
+          <option value="牙醫師">牙醫師</option>
           <option value="藥師">藥師</option>
           <option value="護理師">護理師</option>
           <option value="物理治療師">物理治療師</option>
           <option value="職能治療師">職能治療師</option>
           <option value="醫事檢驗師">醫事檢驗師</option>
+          <option value="醫事放射師">醫事放射師</option>
           <option value="營養師">營養師</option>
+          <option value="助產師">助產師</option>
           <option value="心理師">心理師</option>
           <option value="呼吸治療師">呼吸治療師</option>
           <option value="語言治療師">語言治療師</option>
@@ -209,7 +212,7 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyO9nceGa_M-F4p5PmNSyj8rCOyLt7Yf4p7QLVOJfDdAq1SaFGZtIopCkdNHGjSjz7H5w/exec'; // 替換為你的部署 URL
+    const GOOGLE_SCRIPT_URL = '/api'; // 使用 Vercel 代理
 
     function showMessage(message, isError = true) {
       const messageDiv = document.getElementById('message');
@@ -222,8 +225,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
+          headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const diseaseTypes = await response.json();
@@ -246,8 +248,7 @@
       issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
       fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        mode: 'cors'
+        headers: { 'Accept': 'application/json' }
       })
       .then(response => {
         if (!response.ok) throw new Error('無法連接到後端');
@@ -280,8 +281,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${encodeURIComponent(issueType)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
+          headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const categories = await response.json();
@@ -308,8 +308,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${encodeURIComponent(issueType)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
+          headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const questions = await response.json();
@@ -337,8 +336,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
+          headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const questions = await response.json();
@@ -364,8 +362,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}&question=${encodeURIComponent(question)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
+          headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const result = await response.json();
@@ -386,8 +383,7 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAttachments&issueType=${encodeURIComponent(issueType)}&question=${encodeURIComponent(question)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
+          headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const attachments = await response.json();
@@ -518,8 +514,7 @@
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-          mode: 'cors'
+          body: JSON.stringify(formData)
         });
         if (!response.ok) throw new Error('提交失敗');
         const result = await response.json();
@@ -556,8 +551,7 @@
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dataUrl }),
-          mode: 'cors'
+          body: JSON.stringify({ dataUrl })
         });
         if (!response.ok) throw new Error('簽名上傳失敗');
         const result = await response.json();
