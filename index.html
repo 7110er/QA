@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>疾病全人照護諮詢</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo="> <!-- 解決 favicon 404 -->
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6 max-w-3xl">
     <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
+    <div id="message" class="mt-4 text-center text-lg"></div>
+
     <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
       <!-- 病歷號碼 和 病人來源 -->
       <div class="mb-4 flex space-x-4">
@@ -201,7 +204,6 @@
       <!-- 提交按鈕 -->
       <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition">提交</button>
     </form>
-    <div id="message" class="mt-4 text-center text-lg"></div>
   </div>
 
   <div class="mt-8 text-center">
@@ -209,7 +211,7 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwzs0rOe7f3t3dYWt7_OMpiVa_u2BBhNH-6UHPMLpCCL9saY0GEeict8Z_e5cJDAUlYw/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwzs0rOe7f3t3dYWt7_OMpiVa_u2BBhNH-6UHPMLpCCL9saY0GEeict8Z_e5cJDAUlYw/exec'; // 替換為你的部署 URL
 
     function showMessage(message, isError = true) {
       const messageDiv = document.getElementById('message');
