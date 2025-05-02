@@ -23,7 +23,6 @@
             <option value="門診">門診</option>
             <option value="住院">住院</option>
             <option value="急診">急診</option>
-            <option value="新屋分院">新屋分院</option>
             <option value="社區">社區</option>
             <option value="居家">居家</option>
           </select>
@@ -160,9 +159,9 @@
         <textarea id="holisticAdvice" class="w-full p-2 border rounded-lg text-lg" rows="4"></textarea>
       </div>
 
-      <!-- 醫療人員資料 -->
+      <!-- 照護者（原醫療人員資料） -->
       <div class="mb-4">
-        <label class="block text-lg font-medium mb-2">醫療人員資料 *</label>
+        <label class="block text-lg font-medium mb-2">照護者 *</label>
         <div class="flex space-x-4">
           <input type="text" id="staffId" class="w-1/2 p-2 border rounded-lg text-lg" placeholder="輸入員工編號" required>
           <select id="staffRole" class="w-1/2 p-2 border rounded-lg text-lg" required>
@@ -171,9 +170,6 @@
             <option value="護理師">護理師</option>
             <option value="個案管理師">個案管理師</option>
             <option value="營養師">營養師</option>
-             <option value="物理治療師">物理治療師</option>
-          <option value="職能治療師">職能治療師</option>
-          <option value="醫事檢驗師">醫事檢驗師</option>
           </select>
         </div>
       </div>
@@ -210,11 +206,10 @@
 
   <div class="mt-8 text-center">
     <p class="text-gray-500 text-sm">衛生福利部桃園醫院<br>鈺翔藥師、昕仁藥師 (#2018)<br>網頁設計&資料維護</p>
-    <p class="text-black text-sm mt-2">實證探真知，教學啟思維，<br>臨床煉實力，全人護初心</p>
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwljR_UAJVt8Xi2IrKe0_k3fa4hH5GOtnnUpVBaFmnr7b5J_cKU2KXtWyZl9yyYe9Z7ng/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhHubSXKmwLLFnPclow1m3xN1cMfec-7dGxPGV5_3eIy_15rBZ2Sx1OtFRwwpUJu_M_g/exec';
 
     let allDiseaseTypes = [];
     let allQuestions = [];
@@ -462,6 +457,118 @@
       const sub = document.getElementById(`${type}Sub`);
       sub.classList.toggle('hidden');
     }
+document.getElementById('consultationForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const message = document.getElementById('message');
+  message.textContent = '';
+
+  const requiredFields = [
+    { id: 'staffResponse', label: '醫療人員回應' },
+    { id: 'staffId', label: '員工編號' },
+    { id: 'staffRole', label: '醫療人員角色' }
+  ];
+  for (const field of requiredFields) {
+    if (!document.getElementById(field.id).value) {
+      showMessage(`請填寫${field.label}`);
+      return;
+    }
+  }
+
+  const selectedIssues = Array.from(document.querySelectorAll('input[name="issues"]:checked')).map(cb => cb.value).join(', ');
+  const formData = {
+    '時間戳記': new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+    '病歷號碼': document.getElementById('patientId').value,
+    '病人來源': document.getElementById('patientSource').value,
+    '疾病照護類型': document.getElementById('issueType').value,
+    '問題分類': document.getElementById('category').value,
+    '諮詢問題': document.getElementById('consultationIssue').value,
+    '醫療人員回應': document.getElementById('staffResponse').value,
+    '員工編號': document.getElementById('staffId').value,
+    '醫療人員角色': document.getElementById('staffRole').value,
+    '跨職類照護需求評估': document.getElementById('referral').value,
+    '全人照護建議': document.getElementById('holisticAdvice').value,
+    '發現問題': selectedIssues,
+    '滿意度評分1': document.getElementById('rating1').value,
+    '滿意度評分2': document.getElementById('rating2').value,
+    '滿意度評分3': document.getElementById('rating3').value,
+  };
+
+  const signatureFile = document.getElementById('signatureUpload').files[0];
+  if (signatureFile) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const signatureData = reader.result;
+      try {
+        const signatureUrl = await uploadSignature(signatureData);
+        formData['簽名'] = signatureUrl;
+        await submitFormData(formData);
+      } catch (error) {
+        showMessage(`簽名上傳失敗：${error.message}`);
+      }
+    };
+    reader.readAsDataURL(signatureFile);
+  } else {
+    await submitFormData(formData);
+  }
+});
+
+async function submitFormData(formData) {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    const result = await response.json();
+    if (result.success)
+    document.getElementById('consultationForm').reset();
+document.getElementById('signaturePreview').classList.add('hidden');
+document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
+document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
+document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
+document.getElementById('fontSizeSlider').value = 16;
+document.getElementById('fontSizeValue').textContent = 16;
+document.getElementById('staffResponse').style.fontSize = '16px';
+['rating1', 'rating2', 'rating3'].forEach(id => {
+  const slider = document.getElementById(id);
+  const valueSpan = document.getElementById(`${id}Value`);
+  slider.value = 1;
+  valueSpan.textContent = 1;
+});
+document.getElementById('diseaseSearch').value = '';
+document.getElementById('categorySearch').value = '';
+allQuestions = [];
+document.querySelectorAll('input[name="issues"]').forEach(cb => cb.checked = false);
+window.dispatchEvent(new Event('load'));
+    
+    {
+      showMessage('提交成功！', false);
+    } else {
+      showMessage(`提交失敗：${result.message}`);
+    }
+  } catch (error) {
+    showMessage(`提交失敗：${error.message}`);
+  }
+}
+
+async function uploadSignature(dataUrl) {
+  try {
+    const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataUrl })
+    });
+    const result = await response.json();
+    if (result.success) {
+      return result.url;
+    } else {
+      throw new Error(result.message || '簽名上傳失敗');
+    }
+  } catch (error) {
+    throw new Error(`簽名上傳失敗：${error.message}`);
+  }
+}
+    
   </script>
 </body>
 </html>
