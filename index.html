@@ -209,7 +209,7 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYUDeQEYGvpmBH5bFzdvqZ1e-OHOmkRRrhHALK5HaOyaHsJ6_TWdjY3pZzTv2Ax_h4XQ/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqvRH0w7DTFmo3dy1a4C2njHH79ySrcEhADMdhUsE6OXQ4qRXnv3zQ7l1i0rTWvMaxVg/exec';
 
     function showMessage(message, isError = true) {
       const messageDiv = document.getElementById('message');
@@ -222,7 +222,8 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const diseaseTypes = await response.json();
@@ -245,7 +246,8 @@
       issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
       fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors'
       })
       .then(response => {
         if (!response.ok) throw new Error('無法連接到後端');
@@ -278,7 +280,8 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${encodeURIComponent(issueType)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const categories = await response.json();
@@ -305,7 +308,8 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${encodeURIComponent(issueType)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const questions = await response.json();
@@ -333,7 +337,8 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const questions = await response.json();
@@ -359,7 +364,8 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}&question=${encodeURIComponent(question)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const result = await response.json();
@@ -380,7 +386,8 @@
       try {
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAttachments&issueType=${encodeURIComponent(issueType)}&question=${encodeURIComponent(question)}`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('無法連接到後端');
         const attachments = await response.json();
@@ -511,7 +518,8 @@
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(formData),
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('提交失敗');
         const result = await response.json();
@@ -548,7 +556,8 @@
         const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dataUrl })
+          body: JSON.stringify({ dataUrl }),
+          mode: 'cors'
         });
         if (!response.ok) throw new Error('簽名上傳失敗');
         const result = await response.json();
