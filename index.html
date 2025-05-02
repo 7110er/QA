@@ -159,7 +159,7 @@
         <textarea id="holisticAdvice" class="w-full p-2 border rounded-lg text-lg" rows="4"></textarea>
       </div>
 
-      <!-- 照護者（原醫療人員資料） -->
+      <!-- 照護者 -->
       <div class="mb-4">
         <label class="block text-lg font-medium mb-2">照護者 *</label>
         <div class="flex space-x-4">
@@ -209,10 +209,7 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhHubSXKmwLLFnPclow1m3xN1cMfec-7dGxPGV5_3eIy_15rBZ2Sx1OtFRwwpUJu_M_g/exec';
-
-    let allDiseaseTypes = [];
-    let allQuestions = [];
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYUDeQEYGvpmBH5bFzdvqZ1e-OHOmkRRrhHALK5HaOyaHsJ6_TWdjY3pZzTv2Ax_h4XQ/exec';
 
     function showMessage(message, isError = true) {
       const messageDiv = document.getElementById('message');
@@ -227,8 +224,8 @@
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
+        if (!response.ok) throw new Error('無法連接到後端');
         const diseaseTypes = await response.json();
-        allDiseaseTypes = diseaseTypes;
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
         diseaseTypes.forEach(type => {
@@ -246,13 +243,24 @@
       const searchTerm = document.getElementById('diseaseSearch').value.toLowerCase();
       const issueTypeSelect = document.getElementById('issueType');
       issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
-      const filteredTypes = allDiseaseTypes.filter(type => type.toLowerCase().includes(searchTerm));
-      filteredTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        issueTypeSelect.appendChild(option);
-      });
+      fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('無法連接到後端');
+        return response.json();
+      })
+      .then(diseaseTypes => {
+        const filteredTypes = diseaseTypes.filter(type => type.toLowerCase().includes(searchTerm));
+        filteredTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          issueTypeSelect.appendChild(option);
+        });
+      })
+      .catch(error => showMessage(`搜尋疾病失敗：${error.message}`));
     });
 
     document.getElementById('issueType').addEventListener('change', async () => {
@@ -260,19 +268,19 @@
       document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
       document.getElementById('staffResponse').value = '';
       document.getElementById('categorySearch').value = '';
-      loadCategories();
-      loadAllQuestions();
-      loadAttachments();
+      await loadCategories();
+      await loadAttachments();
     });
 
     async function loadCategories() {
       const issueType = document.getElementById('issueType').value;
       if (!issueType) return;
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${issueType}`, {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${encodeURIComponent(issueType)}`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
+        if (!response.ok) throw new Error('無法連接到後端');
         const categories = await response.json();
         const categorySelect = document.getElementById('category');
         categorySelect.innerHTML = '<option value="">請選擇</option>';
@@ -287,39 +295,24 @@
       }
     }
 
-    async function loadAllQuestions() {
-      const issueType = document.getElementById('issueType').value;
-      if (!issueType) return;
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${issueType}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        const questions = await response.json();
-        allQuestions = questions;
-      } catch (error) {
-        showMessage(`載入問題資料失敗：${error.message}`);
-      }
-    }
-
     document.getElementById('categorySearch').addEventListener('input', async () => {
       const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
       const issueType = document.getElementById('issueType').value;
-      const category = document.getElementById('category').value;
       const consultationIssueSelect = document.getElementById('consultationIssue');
       consultationIssueSelect.innerHTML = '<option value="">請選擇問題</option>';
       if (!issueType) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${issueType}`, {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${encodeURIComponent(issueType)}`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
+        if (!response.ok) throw new Error('無法連接到後端');
         const questions = await response.json();
         const filteredQuestions = questions.filter(q =>
           q.question.toLowerCase().includes(searchTerm) ||
           q.category.toLowerCase().includes(searchTerm) ||
-          q.response.toLowerCase().includes(searchTerm)
+          (q.response || '').toLowerCase().includes(searchTerm)
         );
         filteredQuestions.forEach(q => {
           const option = document.createElement('option');
@@ -338,10 +331,11 @@
       if (!issueType || !category) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${issueType}&category=${category}`, {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
+        if (!response.ok) throw new Error('無法連接到後端');
         const questions = await response.json();
         const consultationIssueSelect = document.getElementById('consultationIssue');
         consultationIssueSelect.innerHTML = '<option value="">請選擇問題</option>';
@@ -363,13 +357,14 @@
       if (!question) return;
 
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${issueType}&category=${category}&question=${question}`, {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}&question=${encodeURIComponent(question)}`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
+        if (!response.ok) throw new Error('無法連接到後端');
         const result = await response.json();
         document.getElementById('staffResponse').value = result.response || '';
-        loadAttachments();
+        await loadAttachments();
       } catch (error) {
         showMessage(`載入回應失敗：${error.message}`);
       }
@@ -383,10 +378,11 @@
         return;
       }
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAttachments&issueType=${issueType}&question=${question}`, {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAttachments&issueType=${encodeURIComponent(issueType)}&question=${encodeURIComponent(question)}`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
+        if (!response.ok) throw new Error('無法連接到後端');
         const attachments = await response.json();
         const attachmentSection = document.getElementById('attachmentSection');
         attachmentSection.innerHTML = '';
@@ -448,127 +444,123 @@
       slider.addEventListener('input', () => {
         valueSpan.textContent = slider.value;
       });
-      slider.addEventListener('change', () => {
-        valueSpan.textContent = slider.value;
-      });
     });
 
     function toggleSubCategories(type) {
       const sub = document.getElementById(`${type}Sub`);
       sub.classList.toggle('hidden');
     }
-document.getElementById('consultationForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const message = document.getElementById('message');
-  message.textContent = '';
 
-  const requiredFields = [
-    { id: 'staffResponse', label: '醫療人員回應' },
-    { id: 'staffId', label: '員工編號' },
-    { id: 'staffRole', label: '醫療人員角色' }
-  ];
-  for (const field of requiredFields) {
-    if (!document.getElementById(field.id).value) {
-      showMessage(`請填寫${field.label}`);
-      return;
-    }
-  }
+    document.getElementById('consultationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = document.getElementById('message');
+      message.textContent = '';
 
-  const selectedIssues = Array.from(document.querySelectorAll('input[name="issues"]:checked')).map(cb => cb.value).join(', ');
-  const formData = {
-    '時間戳記': new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
-    '病歷號碼': document.getElementById('patientId').value,
-    '病人來源': document.getElementById('patientSource').value,
-    '疾病照護類型': document.getElementById('issueType').value,
-    '問題分類': document.getElementById('category').value,
-    '諮詢問題': document.getElementById('consultationIssue').value,
-    '醫療人員回應': document.getElementById('staffResponse').value,
-    '員工編號': document.getElementById('staffId').value,
-    '醫療人員角色': document.getElementById('staffRole').value,
-    '跨職類照護需求評估': document.getElementById('referral').value,
-    '全人照護建議': document.getElementById('holisticAdvice').value,
-    '發現問題': selectedIssues,
-    '滿意度評分1': document.getElementById('rating1').value,
-    '滿意度評分2': document.getElementById('rating2').value,
-    '滿意度評分3': document.getElementById('rating3').value,
-  };
-
-  const signatureFile = document.getElementById('signatureUpload').files[0];
-  if (signatureFile) {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const signatureData = reader.result;
-      try {
-        const signatureUrl = await uploadSignature(signatureData);
-        formData['簽名'] = signatureUrl;
-        await submitFormData(formData);
-      } catch (error) {
-        showMessage(`簽名上傳失敗：${error.message}`);
+      const requiredFields = [
+        { id: 'staffResponse', label: '醫療人員回應' },
+        { id: 'staffId', label: '員工編號' },
+        { id: 'staffRole', label: '醫療人員角色' }
+      ];
+      for (const field of requiredFields) {
+        if (!document.getElementById(field.id).value) {
+          showMessage(`請填寫${field.label}`);
+          return;
+        }
       }
-    };
-    reader.readAsDataURL(signatureFile);
-  } else {
-    await submitFormData(formData);
-  }
-});
 
-async function submitFormData(formData) {
-  try {
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    const result = await response.json();
-    if (result.success)
-    document.getElementById('consultationForm').reset();
-document.getElementById('signaturePreview').classList.add('hidden');
-document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
-document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
-document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
-document.getElementById('fontSizeSlider').value = 16;
-document.getElementById('fontSizeValue').textContent = 16;
-document.getElementById('staffResponse').style.fontSize = '16px';
-['rating1', 'rating2', 'rating3'].forEach(id => {
-  const slider = document.getElementById(id);
-  const valueSpan = document.getElementById(`${id}Value`);
-  slider.value = 1;
-  valueSpan.textContent = 1;
-});
-document.getElementById('diseaseSearch').value = '';
-document.getElementById('categorySearch').value = '';
-allQuestions = [];
-document.querySelectorAll('input[name="issues"]').forEach(cb => cb.checked = false);
-window.dispatchEvent(new Event('load'));
-    
-    {
-      showMessage('提交成功！', false);
-    } else {
-      showMessage(`提交失敗：${result.message}`);
-    }
-  } catch (error) {
-    showMessage(`提交失敗：${error.message}`);
-  }
-}
+      const selectedIssues = Array.from(document.querySelectorAll('input[name="issues"]:checked')).map(cb => cb.value).join(', ');
+      const formData = {
+        '時間戳記': new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+        '病歷號碼': document.getElementById('patientId').value,
+        '病人來源': document.getElementById('patientSource').value,
+        '疾病照護類型': document.getElementById('issueType').value,
+        '問題分類': document.getElementById('category').value,
+        '諮詢問題': document.getElementById('consultationIssue').value,
+        '醫療人員回應': document.getElementById('staffResponse').value,
+        '員工編號': document.getElementById('staffId').value,
+        '醫療人員角色': document.getElementById('staffRole').value,
+        '跨職類照護需求評估': document.getElementById('referral').value,
+        '全人照護建議': document.getElementById('holisticAdvice').value,
+        '發現問題': selectedIssues,
+        '滿意度評分1': document.getElementById('rating1').value,
+        '滿意度評分2': document.getElementById('rating2').value,
+        '滿意度評分3': document.getElementById('rating3').value,
+      };
 
-async function uploadSignature(dataUrl) {
-  try {
-    const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dataUrl })
+      const signatureFile = document.getElementById('signatureUpload').files[0];
+      if (signatureFile) {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const signatureData = reader.result;
+          try {
+            const signatureUrl = await uploadSignature(signatureData);
+            formData['簽名'] = signatureUrl;
+            await submitFormData(formData);
+          } catch (error) {
+            showMessage(`簽名上傳失敗：${error.message}`);
+          }
+        };
+        reader.readAsDataURL(signatureFile);
+      } else {
+        await submitFormData(formData);
+      }
     });
-    const result = await response.json();
-    if (result.success) {
-      return result.url;
-    } else {
-      throw new Error(result.message || '簽名上傳失敗');
+
+    async function submitFormData(formData) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!response.ok) throw new Error('提交失敗');
+        const result = await response.json();
+        if (result.success) {
+          showMessage('提交成功！', false);
+          document.getElementById('consultationForm').reset();
+          document.getElementById('signaturePreview').classList.add('hidden');
+          document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
+          document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
+          document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
+          document.getElementById('fontSizeSlider').value = 16;
+          document.getElementById('fontSizeValue').textContent = 16;
+          document.getElementById('staffResponse').style.fontSize = '16px';
+          ['rating1', 'rating2', 'rating3'].forEach(id => {
+            const slider = document.getElementById(id);
+            const valueSpan = document.getElementById(`${id}Value`);
+            slider.value = 1;
+            valueSpan.textContent = 1;
+          });
+          document.getElementById('diseaseSearch').value = '';
+          document.getElementById('categorySearch').value = '';
+          document.querySelectorAll('input[name="issues"]').forEach(cb => cb.checked = false);
+          window.dispatchEvent(new Event('load'));
+        } else {
+          showMessage(`提交失敗：${result.message}`);
+        }
+      } catch (error) {
+        showMessage(`提交失敗：${error.message}`);
+      }
     }
-  } catch (error) {
-    throw new Error(`簽名上傳失敗：${error.message}`);
-  }
-}
-    
+
+    async function uploadSignature(dataUrl) {
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl })
+        });
+        if (!response.ok) throw new Error('簽名上傳失敗');
+        const result = await response.json();
+        if (result.success) {
+          return result.url;
+        } else {
+          throw new Error(result.message || '簽名上傳失敗');
+        }
+      } catch (error) {
+        throw new Error(`簽名上傳失敗：${error.message}`);
+      }
+    }
   </script>
 </body>
 </html>
