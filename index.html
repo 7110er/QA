@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>疾病全人照護諮詢</title>
+  <title>TYGH 疾病全人照護諮詢</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="data:;base64,iVBORw0KGgo="> <!-- 解決 favicon 404 -->
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6 max-w-3xl">
-    <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
+    <h1 class="text-3xl font-bold text-center mb-4">TYGH 疾病全人照護諮詢</h1>
     <div id="message" class="mt-4 text-center text-lg"></div>
 
     <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
@@ -26,6 +26,7 @@
             <option value="門診">門診</option>
             <option value="住院">住院</option>
             <option value="急診">急診</option>
+             <option value="新屋分院">新屋分院</option>
             <option value="社區">社區</option>
             <option value="居家">居家</option>
           </select>
@@ -140,15 +141,12 @@
           <option value="">請選擇</option>
           <option value="醫師">醫師</option>
           <option value="中醫師">中醫師</option>
-          <option value="牙醫師">牙醫師</option>
           <option value="藥師">藥師</option>
           <option value="護理師">護理師</option>
           <option value="物理治療師">物理治療師</option>
           <option value="職能治療師">職能治療師</option>
           <option value="醫事檢驗師">醫事檢驗師</option>
-          <option value="醫事放射師">醫事放射師</option>
           <option value="營養師">營養師</option>
-          <option value="助產師">助產師</option>
           <option value="心理師">心理師</option>
           <option value="呼吸治療師">呼吸治療師</option>
           <option value="語言治療師">語言治療師</option>
@@ -211,7 +209,7 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwzs0rOe7f3t3dYWt7_OMpiVa_u2BBhNH-6UHPMLpCCL9saY0GEeict8Z_e5cJDAUlYw/exec'; // 替換為你的部署 URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyO9nceGa_M-F4p5PmNSyj8rCOyLt7Yf4p7QLVOJfDdAq1SaFGZtIopCkdNHGjSjz7H5w/exec'; // 替換為你的部署 URL
 
     function showMessage(message, isError = true) {
       const messageDiv = document.getElementById('message');
