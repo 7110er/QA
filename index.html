@@ -212,8 +212,6 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw905ecH9OA1UpdMcK7B2Hsup2tqm-LT5zBBoDiCIAtSgpW2O5X8Oimi626np-aZdqV/exec'; // 你的部署 URL
-
     function showMessage(message, isError = true, elementId = 'message') {
       const messageDiv = document.getElementById(elementId);
       messageDiv.textContent = message;
@@ -221,97 +219,89 @@
       messageDiv.classList.add(isError ? 'text-red-500' : 'text-green-500');
     }
 
-    window.addEventListener('load', async () => {
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const diseaseTypes = await response.json();
+    window.addEventListener('load', () => {
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`載入疾病照護類型失敗：${result.error}`);
+          return;
+        }
         const issueTypeSelect = document.getElementById('issueType');
         issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
-        diseaseTypes.forEach(type => {
+        result.forEach(type => {
           const option = document.createElement('option');
           option.value = type;
           option.textContent = type;
           issueTypeSelect.appendChild(option);
         });
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`載入疾病照護類型失敗：${error.message}`);
-      }
+      }).getDiseaseTypes();
     });
 
-    document.getElementById('diseaseSearch').addEventListener('input', async () => {
+    document.getElementById('diseaseSearch').addEventListener('input', () => {
       const searchTerm = document.getElementById('diseaseSearch').value.toLowerCase();
       const issueTypeSelect = document.getElementById('issueType');
       issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const diseaseTypes = await response.json();
-        const filteredTypes = diseaseTypes.filter(type => type.toLowerCase().includes(searchTerm));
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`搜尋疾病失敗：${result.error}`);
+          return;
+        }
+        const filteredTypes = result.filter(type => type.toLowerCase().includes(searchTerm));
         filteredTypes.forEach(type => {
           const option = document.createElement('option');
           option.value = type;
           option.textContent = type;
           issueTypeSelect.appendChild(option);
         });
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`搜尋疾病失敗：${error.message}`);
-      }
+      }).getDiseaseTypes();
     });
 
-    document.getElementById('issueType').addEventListener('change', async () => {
+    document.getElementById('issueType').addEventListener('change', () => {
       document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
       document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
       document.getElementById('staffResponse').value = '';
       document.getElementById('categorySearch').value = '';
-      await loadCategories();
-      await loadAttachments();
+      loadCategories();
+      loadAttachments();
     });
 
-    async function loadCategories() {
+    function loadCategories() {
       const issueType = document.getElementById('issueType').value;
       if (!issueType) return;
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${encodeURIComponent(issueType)}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const categories = await response.json();
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`載入問題分類失敗：${result.error}`);
+          return;
+        }
         const categorySelect = document.getElementById('category');
         categorySelect.innerHTML = '<option value="">請選擇</option>';
-        categories.forEach(cat => {
+        result.forEach(cat => {
           const option = document.createElement('option');
           option.value = cat;
           option.textContent = cat;
           categorySelect.appendChild(option);
         });
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`載入問題分類失敗：${error.message}`);
-      }
+      }).getCategories(issueType);
     }
 
-    document.getElementById('categorySearch').addEventListener('input', async () => {
+    document.getElementById('categorySearch').addEventListener('input', () => {
       const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
       const issueType = document.getElementById('issueType').value;
       const consultationIssueSelect = document.getElementById('consultationIssue');
       consultationIssueSelect.innerHTML = '<option value="">請選擇問題</option>';
       if (!issueType) return;
 
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${encodeURIComponent(issueType)}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const questions = await response.json();
-        const filteredQuestions = questions.filter(q =>
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`搜尋問題失敗：${result.error}`);
+          return;
+        }
+        const filteredQuestions = result.filter(q =>
           q.question.toLowerCase().includes(searchTerm) ||
           q.category.toLowerCase().includes(searchTerm) ||
           (q.response || '').toLowerCase().includes(searchTerm)
@@ -322,78 +312,72 @@
           option.textContent = q.question;
           consultationIssueSelect.appendChild(option);
         });
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`搜尋問題失敗：${error.message}`);
-      }
+      }).getAllQuestions(issueType);
     });
 
-    document.getElementById('category').addEventListener('change', async () => {
+    document.getElementById('category').addEventListener('change', () => {
       const issueType = document.getElementById('issueType').value;
       const category = document.getElementById('category').value;
       if (!issueType || !category) return;
 
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const questions = await response.json();
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`載入問題失敗：${result.error}`);
+          return;
+        }
         const consultationIssueSelect = document.getElementById('consultationIssue');
         consultationIssueSelect.innerHTML = '<option value="">請選擇問題</option>';
-        questions.forEach(q => {
+        result.forEach(q => {
           const option = document.createElement('option');
           option.value = q.question;
           option.textContent = q.question;
           consultationIssueSelect.appendChild(option);
         });
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`載入問題失敗：${error.message}`);
-      }
+      }).getQuestions(issueType, category);
     });
 
-    document.getElementById('consultationIssue').addEventListener('change', async () => {
+    document.getElementById('consultationIssue').addEventListener('change', () => {
       const issueType = document.getElementById('issueType').value;
       const category = document.getElementById('category').value;
       const question = document.getElementById('consultationIssue').value;
       if (!question) return;
 
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getResponse&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(category)}&question=${encodeURIComponent(question)}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const result = await response.json();
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`載入回應失敗：${result.error}`);
+          return;
+        }
         document.getElementById('staffResponse').value = result.response || '';
-        await loadAttachments();
-      } catch (error) {
+        loadAttachments();
+      }).withFailureHandler(error => {
         showMessage(`載入回應失敗：${error.message}`);
-      }
+      }).getResponse(issueType, category, question);
     });
 
-    async function loadAttachments() {
+    function loadAttachments() {
       const issueType = document.getElementById('issueType').value;
       const question = document.getElementById('consultationIssue').value;
       if (!issueType || !question) {
         document.getElementById('attachmentSection').innerHTML = '';
         return;
       }
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAttachments&issueType=${encodeURIComponent(issueType)}&question=${encodeURIComponent(question)}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error('無法連接到後端');
-        const attachments = await response.json();
+      google.script.run.withSuccessHandler(result => {
+        if (result.error) {
+          showMessage(`載入附件失敗：${result.error}`);
+          return;
+        }
         const attachmentSection = document.getElementById('attachmentSection');
         attachmentSection.innerHTML = '';
-        if (attachments.attachmentD) {
+        if (result.attachmentD) {
           const linkD = document.createElement('a');
-          linkD.href = attachments.attachmentD;
+          linkD.href = result.attachmentD;
           linkD.target = '_blank';
           const imgD = document.createElement('img');
-          imgD.src = attachments.attachmentD;
+          imgD.src = result.attachmentD;
           imgD.className = 'mt-2 max-w-full h-auto border rounded-lg object-contain';
           imgD.onerror = () => {
             linkD.innerHTML = '查看附件D (PDF)';
@@ -402,12 +386,12 @@
           linkD.appendChild(imgD);
           attachmentSection.appendChild(linkD);
         }
-        if (attachments.attachmentF) {
+        if (result.attachmentF) {
           const linkF = document.createElement('a');
-          linkF.href = attachments.attachmentF;
+          linkF.href = result.attachmentF;
           linkF.target = '_blank';
           const imgF = document.createElement('img');
-          imgF.src = attachments.attachmentF;
+          imgF.src = result.attachmentF;
           imgF.className = 'mt-2 max-w-full h-auto border rounded-lg object-contain';
           imgF.onerror = () => {
             linkF.innerHTML = '查看附件F (PDF)';
@@ -416,9 +400,9 @@
           linkF.appendChild(imgF);
           attachmentSection.appendChild(linkF);
         }
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`載入附件失敗：${error.message}`);
-      }
+      }).getAttachments(issueType, question);
     }
 
     document.getElementById('fontSizeSlider').addEventListener('input', () => {
@@ -453,7 +437,7 @@
       sub.classList.toggle('hidden');
     }
 
-    document.getElementById('consultationForm').addEventListener('submit', async (e) => {
+    document.getElementById('consultationForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const submitMessage = document.getElementById('submitMessage');
       submitMessage.textContent = '';
@@ -492,31 +476,28 @@
       const signatureFile = document.getElementById('signatureUpload').files[0];
       if (signatureFile) {
         const reader = new FileReader();
-        reader.onload = async () => {
+        reader.onload = () => {
           const signatureData = reader.result;
-          try {
-            const signatureUrl = await uploadSignature(signatureData);
-            formData['簽名'] = signatureUrl;
-            await submitFormData(formData);
-          } catch (error) {
+          google.script.run.withSuccessHandler(result => {
+            if (!result.success) {
+              showMessage(`簽名上傳失敗：${result.message}`, true, 'submitMessage');
+              return;
+            }
+            formData['簽名'] = result.url;
+            submitFormData(formData);
+          }).withFailureHandler(error => {
             showMessage(`簽名上傳失敗：${error.message}`, true, 'submitMessage');
-          }
+          }).uploadSignature(signatureData);
         };
         reader.readAsDataURL(signatureFile);
       } else {
-        await submitFormData(formData);
+        formData['簽名'] = '';
+        submitFormData(formData);
       }
     });
 
-    async function submitFormData(formData) {
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-        if (!response.ok) throw new Error('提交失敗');
-        const result = await response.json();
+    function submitFormData(formData) {
+      google.script.run.withSuccessHandler(result => {
         if (result.success) {
           showMessage('提交成功！', false, 'submitMessage');
           document.getElementById('consultationForm').reset();
@@ -540,28 +521,9 @@
         } else {
           showMessage(`提交失敗：${result.message}`, true, 'submitMessage');
         }
-      } catch (error) {
+      }).withFailureHandler(error => {
         showMessage(`提交失敗：${error.message}`, true, 'submitMessage');
-      }
-    }
-
-    async function uploadSignature(dataUrl) {
-      try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=uploadSignature`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dataUrl })
-        });
-        if (!response.ok) throw new Error('簽名上傳失敗');
-        const result = await response.json();
-        if (result.success) {
-          return result.url;
-        } else {
-          throw new Error(result.message || '簽名上傳失敗');
-        }
-      } catch (error) {
-        throw new Error(`簽名上傳失敗：${error.message}`);
-      }
+      }).submitFormData(formData);
     }
   </script>
 </body>
