@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6 max-w-3xl">
-    <h1 class="text-3xl font-bold text-center mb-4">疾病全人照護諮詢</h1>
+    <h1 class="text-3xl font-bold text-center mb-4">TYGH 疾病全人照護諮詢</h1>
     <div id="message" class="mt-4 text-center text-lg"></div>
 
     <form id="consultationForm" class="bg-white p-6 rounded-lg shadow-md">
@@ -141,16 +141,13 @@
           <option value="">請選擇</option>
           <option value="醫師">醫師</option>
           <option value="中醫師">中醫師</option>
-          <option value="牙醫師">牙醫師</option>
           <option value="藥師">藥師</option>
           <option value="護理師">護理師</option>
           <option value="物理治療師">物理治療師</option>
           <option value="職能治療師">職能治療師</option>
           <option value="醫事檢驗師">醫事檢驗師</option>
-          <option value="醫事放射師">醫事放射師</option>
           <option value="營養師">營養師</option>
-          <option value="助產師">助產師</option>
-          <option value="心理師">心理師</option>
+          <option value="臨床心理師">臨床心理師</option>
           <option value="呼吸治療師">呼吸治療師</option>
           <option value="語言治療師">語言治療師</option>
           <option value="聽力師">聽力師</option>
@@ -202,8 +199,11 @@
         <img id="signaturePreview" class="mt-2 hidden w-full max-w-xs border rounded-lg" alt="簽名預覽">
       </div>
 
-      <!-- 提交按鈕 -->
-      <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition">提交</button>
+      <!-- 提交按鈕及訊息區域 -->
+      <div>
+        <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition">提交</button>
+        <div id="submitMessage" class="mt-2 text-center text-lg"></div>
+      </div>
     </form>
   </div>
 
@@ -214,8 +214,8 @@
   <script>
     const GOOGLE_SCRIPT_URL = '/api'; // 使用 Vercel 代理
 
-    function showMessage(message, isError = true) {
-      const messageDiv = document.getElementById('message');
+    function showMessage(message, isError = true, elementId = 'message') {
+      const messageDiv = document.getElementById(elementId);
       messageDiv.textContent = message;
       messageDiv.classList.remove('text-red-500', 'text-green-500');
       messageDiv.classList.add(isError ? 'text-red-500' : 'text-green-500');
@@ -456,8 +456,8 @@
 
     document.getElementById('consultationForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const message = document.getElementById('message');
-      message.textContent = '';
+      const submitMessage = document.getElementById('submitMessage');
+      submitMessage.textContent = '';
 
       const requiredFields = [
         { id: 'staffResponse', label: '醫療人員回應' },
@@ -466,7 +466,7 @@
       ];
       for (const field of requiredFields) {
         if (!document.getElementById(field.id).value) {
-          showMessage(`請填寫${field.label}`);
+          showMessage(`請填寫${field.label}`, true, 'submitMessage');
           return;
         }
       }
@@ -500,7 +500,7 @@
             formData['簽名'] = signatureUrl;
             await submitFormData(formData);
           } catch (error) {
-            showMessage(`簽名上傳失敗：${error.message}`);
+            showMessage(`簽名上傳失敗：${error.message}`, true, 'submitMessage');
           }
         };
         reader.readAsDataURL(signatureFile);
@@ -519,7 +519,7 @@
         if (!response.ok) throw new Error('提交失敗');
         const result = await response.json();
         if (result.success) {
-          showMessage('提交成功！', false);
+          showMessage('提交成功！', false, 'submitMessage');
           document.getElementById('consultationForm').reset();
           document.getElementById('signaturePreview').classList.add('hidden');
           document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
@@ -539,10 +539,10 @@
           document.querySelectorAll('input[name="issues"]').forEach(cb => cb.checked = false);
           window.dispatchEvent(new Event('load'));
         } else {
-          showMessage(`提交失敗：${result.message}`);
+          showMessage(`提交失敗：${result.message}`, true, 'submitMessage');
         }
       } catch (error) {
-        showMessage(`提交失敗：${error.message}`);
+        showMessage(`提交失敗：${error.message}`, true, 'submitMessage');
       }
     }
 
