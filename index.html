@@ -212,103 +212,90 @@
   </div>
 
   <script>
-<script>
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQ4y1cIdTFIzmfbUfaRqVwBMzvknaK2xUJmoRGyMd8tvhSq66TEl6w4g30X18njMAuhw/exec'; // 替換為你的部署 URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQ4y1cIdTFIzmfbUfaRqVwBMzvknaK2xUJmoRGyMd8tvhSq66TEl6w4g30X18njMAuhw/exec'; // 你的部署 URL
 
-  function showMessage(message, isError = true, elementId = 'message') {
-    const messageDiv = document.getElementById(elementId);
-    messageDiv.textContent = message;
-    messageDiv.classList.remove('text-red-500', 'text-green-500');
-    messageDiv.classList.add(isError ? 'text-red-500' : 'text-green-500');
-  }
+    function showMessage(message, isError = true, elementId = 'message') {
+      const messageDiv = document.getElementById(elementId);
+      messageDiv.textContent = message;
+      messageDiv.classList.remove('text-red-500', 'text-green-500');
+      messageDiv.classList.add(isError ? 'text-red-500' : 'text-green-500');
+    }
 
-  window.addEventListener('load', async () => {
-    try {
-      const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        mode: 'no-cors' // 臨時處理 CORS，後續可移除
-      });
-      if (!response.ok) throw new Error('無法連接到後端');
-      const diseaseTypes = await response.json();
+    window.addEventListener('load', async () => {
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) throw new Error('無法連接到後端');
+        const diseaseTypes = await response.json();
+        const issueTypeSelect = document.getElementById('issueType');
+        issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
+        diseaseTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          issueTypeSelect.appendChild(option);
+        });
+      } catch (error) {
+        showMessage(`載入疾病照護類型失敗：${error.message}`);
+      }
+    });
+
+    document.getElementById('diseaseSearch').addEventListener('input', async () => {
+      const searchTerm = document.getElementById('diseaseSearch').value.toLowerCase();
       const issueTypeSelect = document.getElementById('issueType');
       issueTypeSelect.innerHTML = '<option value="">請選擇</option>';
-      diseaseTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        issueTypeSelect.appendChild(option);
-      });
-    } catch (error) {
-      showMessage(`載入疾病照護類型失敗：${error.message}`);
-    }
-  });
-
-  // 其他 fetch 請求（如 loadCategories、submitFormData 等）也需調整 mode: 'no-cors'
-  async function submitFormData(formData) {
-    try {
-      const response = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        mode: 'no-cors' // 臨時處理 CORS
-      });
-      if (!response.ok) throw new Error('提交失敗');
-      const result = await response.json();
-      if (result.success) {
-        showMessage('提交成功！', false, 'submitMessage');
-        document.getElementById('consultationForm').reset();
-        document.getElementById('signaturePreview').classList.add('hidden');
-        document.getElementById('issueType').innerHTML = '<option value="">請選擇</option>';
-        document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
-        document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
-        document.getElementById('fontSizeSlider').value = 16;
-        document.getElementById('fontSizeValue').textContent = 16;
-        document.getElementById('staffResponse').style.fontSize = '16px';
-        ['rating1', 'rating2', 'rating3'].forEach(id => {
-          const slider = document.getElementById(id);
-          const valueSpan = document.getElementById(`${id}Value`);
-          slider.value = 1;
-          valueSpan.textContent = 1;
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDiseaseTypes`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
         });
-        document.getElementById('diseaseSearch').value = '';
-        document.getElementById('categorySearch').value = '';
-        document.querySelectorAll('input[name="issues"]').forEach(cb => cb.checked = false);
-        window.dispatchEvent(new Event('load'));
-      } else {
-        showMessage(`提交失敗：${result.message}`, true, 'submitMessage');
+        if (!response.ok) throw new Error('無法連接到後端');
+        const diseaseTypes = await response.json();
+        const filteredTypes = diseaseTypes.filter(type => type.toLowerCase().includes(searchTerm));
+        filteredTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          issueTypeSelect.appendChild(option);
+        });
+      } catch (error) {
+        showMessage(`搜尋疾病失敗：${error.message}`);
       }
-    } catch (error) {
-      showMessage(`提交失敗：${error.message}`, true, 'submitMessage');
-    }
-  }
+    });
 
-  // 確保其他 fetch 函數（如 loadCategories、loadAttachments 等）也添加 mode: 'no-cors'
-  async function loadCategories() {
-    const issueType = document.getElementById('issueType').value;
-    if (!issueType) return;
-    try {
-      const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${encodeURIComponent(issueType)}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        mode: 'no-cors'
-      });
-      if (!response.ok) throw new Error('無法連接到後端');
-      const categories = await response.json();
-      const categorySelect = document.getElementById('category');
-      categorySelect.innerHTML = '<option value="">請選擇</option>';
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        categorySelect.appendChild(option);
-      });
-    } catch (error) {
-      showMessage(`載入問題分類失敗：${error.message}`);
-    }
-  }
-  // 類似地調整其他 fetch 調用...
+    document.getElementById('issueType').addEventListener('change', async () => {
+      document.getElementById('category').innerHTML = '<option value="">請選擇</option>';
+      document.getElementById('consultationIssue').innerHTML = '<option value="">請選擇問題</option>';
+      document.getElementById('staffResponse').value = '';
+      document.getElementById('categorySearch').value = '';
+      await loadCategories();
+      await loadAttachments();
+    });
 
+    async function loadCategories() {
+      const issueType = document.getElementById('issueType').value;
+      if (!issueType) return;
+      try {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getCategories&issueType=${encodeURIComponent(issueType)}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) throw new Error('無法連接到後端');
+        const categories = await response.json();
+        const categorySelect = document.getElementById('category');
+        categorySelect.innerHTML = '<option value="">請選擇</option>';
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          categorySelect.appendChild(option);
+        });
+      } catch (error) {
+        showMessage(`載入問題分類失敗：${error.message}`);
+      }
+    }
 
     document.getElementById('categorySearch').addEventListener('input', async () => {
       const searchTerm = document.getElementById('categorySearch').value.toLowerCase();
