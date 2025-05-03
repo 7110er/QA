@@ -213,8 +213,8 @@
   </div>
 
   <script>
-    // 設定後端 URL
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpebAWy6GmaewBQE63N2Y_FAUGxRxXuXevp3nTpTlMHY22mJKB3bP8PVKDyrskwxaP/exec'; // 確保這是您最新的 Google Apps Script 部署 URL
+    // 設定後端 URL（請替換為您的 Google Apps Script 部署 URL）
+    const GOOGLE_SCRIPT_URL = '您的 Google Apps Script 部署 URL';
 
     // 顯示訊息的函數（錯誤用紅色，成功用綠色）
     function showMessage(message, isError = true, elementId = 'message') {
@@ -326,7 +326,7 @@
       consultationIssueSelect.innerHTML = '<option value="">請選擇問題</option>';
       if (!issueType) return;
       try {
-        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllQuestions&issueType=${encodeURIComponent(issueType)}`, {
+        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions&issueType=${encodeURIComponent(issueType)}&category=${encodeURIComponent(document.getElementById('category').value)}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
@@ -335,11 +335,7 @@
         if (!response.ok) throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
         const result = await response.json();
         if (result.error) throw new Error(result.error);
-        const filteredQuestions = result.filter(q =>
-          q.question.toLowerCase().includes(searchTerm) ||
-          q.category.toLowerCase().includes(searchTerm) ||
-          (q.response || '').toLowerCase().includes(searchTerm)
-        );
+        const filteredQuestions = result.filter(q => q.question.toLowerCase().includes(searchTerm));
         filteredQuestions.forEach(q => {
           const option = document.createElement('option');
           option.value = q.question;
@@ -517,21 +513,21 @@
       // 收集表單資料
       const selectedIssues = Array.from(document.querySelectorAll('input[name="issues"]:checked')).map(cb => cb.value).join(', ');
       const formData = {
-        '時間戳記': new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
-        '病歷號碼': document.getElementById('patientId').value,
-        '病人來源': document.getElementById('patientSource').value,
-        '疾病照護類型': document.getElementById('issueType').value,
-        '問題分類': document.getElementById('category').value,
-        '諮詢問題': document.getElementById('consultationIssue').value,
-        '醫療人員回應': document.getElementById('staffResponse').value,
-        '員工編號': document.getElementById('staffId').value,
-        '醫療人員角色': document.getElementById('staffRole').value,
-        '跨職類照護需求評估': document.getElementById('referral').value,
-        '全人照護建議': document.getElementById('holisticAdvice').value,
-        '發現問題': selectedIssues,
-        '滿意度評分1': document.getElementById('rating1').value,
-        '滿意度評分2': document.getElementById('rating2').value,
-        '滿意度評分3': document.getElementById('rating3').value,
+        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+        patientId: document.getElementById('patientId').value,
+        patientSource: document.getElementById('patientSource').value,
+        issueType: document.getElementById('issueType').value,
+        category: document.getElementById('category').value,
+        userInput: document.getElementById('consultationIssue').value,
+        staffResponse: document.getElementById('staffResponse').value,
+        staffId: document.getElementById('staffId').value,
+        staffRole: document.getElementById('staffRole').value,
+        referral: document.getElementById('referral').value,
+        holisticAdvice: document.getElementById('holisticAdvice').value,
+        issues: selectedIssues,
+        rating1: document.getElementById('rating1').value,
+        rating2: document.getElementById('rating2').value,
+        rating3: document.getElementById('rating3').value,
       };
 
       // 處理簽名上傳
@@ -549,7 +545,7 @@
             if (!response.ok) throw new Error(`HTTP 錯誤，狀態碼: ${response.status}`);
             const result = await response.json();
             if (result.error || !result.success) throw new Error(result.error || '簽名上傳失敗');
-            formData['簽名'] = result.url;
+            formData.signature = result.url;
             await submitFormData(formData);
           } catch (error) {
             showMessage(`簽名上傳失敗：${error.message}`, true, 'submitMessage');
@@ -557,7 +553,7 @@
         };
         reader.readAsDataURL(signatureFile);
       } else {
-        formData['簽名'] = '';
+        formData.signature = '';
         await submitFormData(formData);
       }
     });
